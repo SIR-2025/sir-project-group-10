@@ -35,7 +35,7 @@ class NaoMotionDemo(SICApplication):
         super(NaoMotionDemo, self).__init__()
         
         # Demo-specific initialization
-        self.nao_ip = "XXX"
+        self.nao_ip = "10.0.0.137"
         self.nao = None
 
         self.set_log_level(sic_logging.INFO)
@@ -60,7 +60,7 @@ class NaoMotionDemo(SICApplication):
             time.sleep(1)
 
             self.logger.info("Playing Hey gesture animation")
-            self.nao.motion.request(NaoqiAnimationRequest("animations/Stand/Gestures/Hey_1"))
+            # self.nao.tts.request(NaoqiTextToSpeechRequest("Hocus Pocus. "))
             time.sleep(1)
 
             # Reset the eyes when necessary

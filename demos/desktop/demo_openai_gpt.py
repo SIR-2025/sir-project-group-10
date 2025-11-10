@@ -90,8 +90,10 @@ class GPTDemo(SICApplication):
                 reply = self.gpt.request(GPTRequest(input=user_input, context_messages=self.context, system_message="Reverse the order of everything you say."))
                 print("Reply: {response}".format(response=reply.response))
                 
+                with open("test.txt", "a") as f:
+                    f.write(reply.response)
+
                 # Add user input to context messages for the model (this allows for conversations)
-                self.context.append(user_input)
                 i += 1
             
             self.logger.info("Conversation ended")

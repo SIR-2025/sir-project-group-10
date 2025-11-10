@@ -26,7 +26,7 @@ class NaoCameraDemo(SICApplication):
         super(NaoCameraDemo, self).__init__()
         
         # Demo-specific initialization
-        self.nao_ip = "XXX"
+        self.nao_ip = "10.0.0.137"
         self.nao = None
         self.imgs = queue.Queue()
         
@@ -55,7 +55,7 @@ class NaoCameraDemo(SICApplication):
         
         # Create camera configuration using vflip to flip the image vertically
         # See "NaoqiCameraConf" for more options like brightness, contrast, sharpness, etc
-        conf = NaoqiCameraConf(vflip=1)
+        conf = NaoqiCameraConf(vflip=0)
         
         # Initialize the NAO robot
         self.nao = Nao(ip=self.nao_ip, top_camera_conf=conf)
