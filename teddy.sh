@@ -28,7 +28,6 @@ cleanup() {
     
     # Kill by process name
     pkill -TERM redis-server
-    pkill -TERM run-gpt
     pkill -TERM run-google-stt
     pkill -TERM -f "python demos/nao/nao_gpt.py"
     
@@ -37,14 +36,12 @@ cleanup() {
     
     # Force kill any remaining
     pkill -KILL redis-server 2>/dev/null
-    pkill -KILL run-gpt 2>/dev/null
     pkill -KILL run-google-stt 2>/dev/null
     pkill -KILL -f "python demos/nao/nao_gpt.py" 2>/dev/null
     
 
     # Kill the terminal windows
     pkill -f "gnome-terminal.*Redis Server"
-    pkill -f "gnome-terminal.*GPT"
     pkill -f "gnome-terminal.*Google STT"
     pkill -f "gnome-terminal.*NAO GPT"
 
@@ -59,12 +56,7 @@ gnome-terminal --title="Redis Server" \
     --geometry=120x30+0+0 \
     -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && redis-server conf/redis/redis.conf" &
 
-# Window 2: run-gpt (top-right)
-gnome-terminal --title="GPT" \
-    --geometry=120x30+$WIN_WIDTH+0 \
-    -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && run-gpt" &
-
-# Window 3: run-google-stt (bottom-left)
+# Window 2: run-google-stt (bottom-left)
 gnome-terminal --title="Google STT" \
     --geometry=120x30+0+$WIN_HEIGHT \
     -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && run-google-stt" &
@@ -72,7 +64,7 @@ gnome-terminal --title="Google STT" \
 # Wait 3 seconds
 sleep 3
 
-# Window 4: nao_gpt.py (bottom-right)
+# Window 3: nao_gpt.py (bottom-right)
 gnome-terminal --title="NAO GPT" \
     --geometry=120x30+$WIN_WIDTH+$WIN_HEIGHT \
     -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && python demos/nao/nao_gpt.py" &

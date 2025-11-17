@@ -28,16 +28,13 @@ cleanup() {
 
     if [[ "$OS_TYPE" == "Linux" ]]; then
         pkill -TERM redis-server
-        pkill -TERM run-gpt
         pkill -TERM run-google-stt
         pkill -TERM -f "python demos/nao/nao_gpt.py"
         sleep 5
         pkill -KILL redis-server 2>/dev/null
-        pkill -KILL run-gpt 2>/dev/null
         pkill -KILL run-google-stt 2>/dev/null
         pkill -KILL -f "python demos/nao/nao_gpt.py" 2>/dev/null
         pkill -f "gnome-terminal.*Redis Server"
-        pkill -f "gnome-terminal.*GPT"
         pkill -f "gnome-terminal.*Google STT"
         pkill -f "gnome-terminal.*NAO GPT"
     else
@@ -58,9 +55,6 @@ if [[ "$OS_TYPE" == "Linux" ]]; then
     gnome-terminal --title="Redis Server" \
         -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && redis-server conf/redis/redis.conf" &
 
-    gnome-terminal --title="GPT" \
-        -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && run-gpt" &
-
     gnome-terminal --title="Google STT" \
         -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && run-google-stt" &
 
@@ -78,9 +72,6 @@ else
 
     # Redis (both redis-server.exe and conf are under conf/redis)
     start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source venv_sic/Scripts/activate; ./conf/redis/redis-server.exe conf/redis/redis.conf; exec bash"
-
-    # GPT
-    start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source venv_sic/Scripts/activate; run-gpt; exec bash"
 
     # Google STT
     start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source venv_sic/Scripts/activate; run-google-stt; exec bash"
