@@ -3,6 +3,15 @@
 # Get the current directory
 WORK_DIR=$(pwd)
 
+# Detect OS
+OS_TYPE="$(uname -s)"
+
+# Path to Git Bash (on Windows)
+GIT_BASH_PATH="/c/Program Files/Git/bin/bash.exe"
+
+# Log file path
+LOG_FILE="$WORK_DIR/logs.txt"
+
 # Check if venv exists
 if [ ! -d "venv_sic" ]; then
     echo "Error: venv_sic directory not found in current directory"
@@ -15,59 +24,82 @@ if [ ! -f "conf/redis/redis.conf" ]; then
     exit 1
 fi
 
-# Screen dimensions for 1920x1080 with 30px bottom panel
-SCREEN_WIDTH=1920
-SCREEN_HEIGHT=1050
-WIN_WIDTH=960
-WIN_HEIGHT=525
+# Clear/create log file
+> "$LOG_FILE"
 
-# Trap Ctrl+C to kill all child processes
+echo "Output from nao_gpt.py will be written to logs.txt"
+echo ""
+
+# Cleanup handler
 cleanup() {
     echo ""
     echo "Shutting down all processes..."
-    
-    # Kill by process name
-    pkill -TERM redis-server
-    pkill -TERM run-google-stt
-    pkill -TERM -f "python demos/nao/nao_gpt.py"
-    
-    echo "Waiting 5 seconds for graceful shutdown..."
-    sleep 5
-    
-    # Force kill any remaining
-    pkill -KILL redis-server 2>/dev/null
-    pkill -KILL run-google-stt 2>/dev/null
-    pkill -KILL -f "python demos/nao/nao_gpt.py" 2>/dev/null
-    
 
-    # Kill the terminal windows
-    pkill -f "gnome-terminal.*Redis Server"
-    pkill -f "gnome-terminal.*Google STT"
-    pkill -f "gnome-terminal.*NAO GPT"
-
+    if [[ "$OS_TYPE" == "Linux" ]]; then
+        pkill -TERM redis-server
+        pkill -TERM run-google-stt
+        pkill -TERM -f "python demos/nao/nao_gpt.py"
+        sleep 5
+        pkill -KILL redis-server 2>/dev/null
+        pkill -KILL run-google-stt 2>/dev/null
+        pkill -KILL -f "python demos/nao/nao_gpt.py" 2>/dev/null
+        pkill -f "gnome-terminal.*Redis Server"
+        pkill -f "gnome-terminal.*Google STT"
+        pkill -f "gnome-terminal.*NAO GPT"
+    else
+        taskkill //IM redis-server.exe //F 2>nul
+        taskkill //IM python.exe //F 2>nul
+        taskkill //IM bash.exe //F 2>nul
+    fi
     echo "All processes terminated"
+    echo "Check logs.txt for output from nao_gpt.py"
     exit 0
 }
 
 trap cleanup SIGINT SIGTERM
 
-# Window 1: Redis Server (top-left)
-gnome-terminal --title="Redis Server" \
-    --geometry=120x30+0+0 \
-    -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && redis-server conf/redis/redis.conf" &
+# --- LINUX SECTION ---
+if [[ "$OS_TYPE" == "Linux" ]]; then
+    echo "Detected Linux - launching gnome-terminal windows..."
 
-# Window 2: run-google-stt (bottom-left)
-gnome-terminal --title="Google STT" \
-    --geometry=120x30+0+$WIN_HEIGHT \
-    -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && run-google-stt" &
+    # Screen dimensions for 1920x1080 with 30px bottom panel
+    SCREEN_WIDTH=1920
+    SCREEN_HEIGHT=1050
+    WIN_WIDTH=960
+    WIN_HEIGHT=525
 
-# Wait 3 seconds
-sleep 3
+    # Window 1: Redis Server (top-left)
+    gnome-terminal --title="Redis Server" \
+        --geometry=120x30+0+0 \
+        -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && redis-server conf/redis/redis.conf" &
 
-# Window 3: nao_gpt.py (bottom-right)
-gnome-terminal --title="NAO GPT" \
-    --geometry=120x30+$WIN_WIDTH+$WIN_HEIGHT \
-    -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && python demos/nao/nao_gpt.py" &
+    # Window 2: Google STT (bottom-left)
+    gnome-terminal --title="Google STT" \
+        --geometry=120x30+0+$WIN_HEIGHT \
+        -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && run-google-stt" &
+
+    sleep 3
+
+    # Window 3: NAO GPT (bottom-right) with logging
+    gnome-terminal --title="NAO GPT" \
+        --geometry=120x30+$WIN_WIDTH+$WIN_HEIGHT \
+        -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && python -u demos/nao/nao_gpt.py 2>&1 | tee '$LOG_FILE'" &
+
+# --- WINDOWS SECTION (Git Bash version) ---
+else
+    echo "Detected Windows - launching new Git Bash terminals..."
+
+    # Redis
+    start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source venv_sic/Scripts/activate; ./conf/redis/redis-server.exe conf/redis/redis.conf"
+
+    # Google STT
+    start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source venv_sic/Scripts/activate; run-google-stt"
+
+    sleep 3
+
+    # NAO GPT with logging
+    start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source venv_sic/Scripts/activate; python -u demos/nao/nao_gpt.py 2>&1 | tee '$LOG_FILE'"
+fi
 
 echo "All terminals launched"
 echo "Press Ctrl+C to terminate all processes"

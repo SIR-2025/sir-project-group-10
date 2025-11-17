@@ -2,14 +2,6 @@
 from sic_framework.core.sic_application import SICApplication
 from sic_framework.core import sic_logging
 
-# Import the OpenAI GPT service, configuration, and message types
-from sic_framework.services.openai_gpt.gpt import (
-    GPT,
-    GPTConf,
-    GPTRequest,
-    GPTResponse
-)
-
 # STT imports
 from sic_framework.services.google_stt.google_stt import (
     GoogleSpeechToText,
@@ -17,10 +9,16 @@ from sic_framework.services.google_stt.google_stt import (
     GetStatementRequest,
 )
 
-# Import libraries necessary for the demo
-from os.path import abspath, join
-from dotenv import load_dotenv
-from os import environ
+# Import message types and requests required for custom motions
+from sic_framework.devices.common_naoqi.naoqi_motion_recorder import (
+    NaoqiMotionRecorderConf,
+    NaoqiMotionRecording,
+    PlayRecording,
+    StartRecording,
+    StopRecording,
+)
+
+from sic_framework.devices.common_naoqi.naoqi_stiffness import Stiffness
 
 # Import the device(s) we will be using
 from sic_framework.devices import Nao
@@ -33,32 +31,24 @@ from sic_framework.devices.common_naoqi.naoqi_text_to_speech import (
     NaoqiTextToSpeechRequest,
 )
 
-# Import libraries necessary for the demo
+# Import needed libraries
 from time import sleep
 import json
 import requests
+from os.path import abspath, join
 
-class GPTDemo(SICApplication):
+class Therapist(SICApplication):
     """
-    Demo which shows how to use the OpenAI GPT model to get responses to user input.
-
-    A secret API key is required to run it.
-
-    IMPORTANT
-    OpenAI GPT service needs to be running:
-
-    1. pip install --upgrade social-interaction-cloud[openai-gpt]
-        Note: on macOS you might need use quotes pip install --upgrade "social-interaction-cloud[...]"
-    2. run-gpt
+    Our main code execution which requires a backend LLM to be running. We use colab to achieve this.
     """
 
-    def __init__(self, google_keyfile_path, env_path=None):
+    def __init__(self, google_keyfile_path):
         # Call parent constructor (handles singleton initialization)
-        super(GPTDemo, self).__init__()
+        super(Therapist, self).__init__()
 
-        self.env_path = env_path
         self.context = []
         self.NUM_TURNS_part1 = 7
+        self.chain = ["LArm", "RArm"]
 
         # Nao initialization
         self.nao_ip = "10.0.0.137"
@@ -75,9 +65,6 @@ class GPTDemo(SICApplication):
 
         # Configure logging
         self.set_log_level(sic_logging.INFO)
-
-        # Log files will only be written if set_log_file is called. Must be a valid full path to a directory.
-        # self.set_log_file("/Users/apple/Desktop/SAIL/SIC_Development/sic_applications/demos/desktop/logs")
 
         self.setup()
 
@@ -98,21 +85,11 @@ class GPTDemo(SICApplication):
             return None
 
 
-
     def setup(self):
-        """Initialize and configure the GPT service."""
-        self.logger.info("Setting up GPT...")
+        """Initialize and configure the service."""
 
         # Initialize the NAO robot
         self.nao = Nao(ip=self.nao_ip)
-
-        # Generate your personal env api key here: https://platform.openai.com/api-keys
-        # Either add your env key to your systems variables (and do not provide an env_path) or
-        # create a .env file in the conf/ folder and add your key there like this:
-        # OPENAI_API_KEY="your key"
-        if self.env_path:
-            self.env_path=abspath("conf/.env")
-            load_dotenv(self.env_path)
 
         # Google STT Setup
         self.nao_mic = self.nao.mic
@@ -134,12 +111,7 @@ class GPTDemo(SICApplication):
 
     def say_with_gesture(self, resp):
         """Make NAO say something while performing a gesture."""
-        # self.nao.tts.request(NaoqiTextToSpeechRequest("Hello, I am a Nao robot! And I like to chat."))
-        self.nao.motion.request(NaoqiAnimationRequest("animations/Stand/Gestures/Hey_1"), block=False)
-        self.nao.tts.request(NaoqiTextToSpeechRequest(resp))
-
-        # self.nao.motion.request(NaoqiAnimationRequest("animations/Stand/Gestures/Hey_1"), block=False)
-        # self.nao.tts.request(NaoqiTextToSpeechRequest(resp), block=True)
+        self.nao.tts.request(NaoqiTextToSpeechRequest(resp, animated=True))
 
 
     def wakeup(self):
@@ -169,6 +141,9 @@ class GPTDemo(SICApplication):
         return max(1.0, words * 0.4)
 
     def confirm(self, part):
+        """
+        Awaits user confirmation for the next part
+        """
         print("\n"+"="*60+"\n")
         print(f"\tAre we ready for {part}")
         print("\n"+"="*60+"\n")
@@ -176,8 +151,11 @@ class GPTDemo(SICApplication):
         while answer != "y" and answer != "yes":
             answer = input("Enter yes/y when ready: ")
 
-
     def part1(self):
+        """
+        Executes part 1 of the performance
+        """
+
         i = 0
         craziness_meter = 1/self.NUM_TURNS_part1
         # Continuous conversation with LLM
@@ -189,6 +167,15 @@ class GPTDemo(SICApplication):
                 continue
 
             user_prompt = user_input
+
+
+            # Replay the recording
+            self.logger.info("Replaying action")
+            self.nao.stiffness.request(
+                Stiffness(stiffness=0.7, joints=self.chain)
+            )  # Enable stiffness for replay
+            recording = NaoqiMotionRecording.load("motion_recorder_test")
+            self.nao.motion_record.request(PlayRecording(recording))
 
             result = self.query_model(
             f"""
@@ -225,7 +212,6 @@ class GPTDemo(SICApplication):
         try:
             self.wakeup()
             self.logger.info("I am awoken!")
-            # self.say_animated()
             sleep(2)
             
             # Get confirmation that we're ready for part1
@@ -249,13 +235,7 @@ class GPTDemo(SICApplication):
 
 
 if __name__ == "__main__":
-    # Create and run the demo
     # This will be the single SICApplication instance for the process
-    # demo = GPTDemo(env_path=abspath(join("..", "..", "conf", ".env")))
     google_keyfile_path=abspath(join("..", "..", "conf", "google", "google-key.json"))
-    demo = GPTDemo(
-        google_keyfile_path=abspath(join("..", "..", "conf", "google", "google-key.json")),
-        env_path=abspath(join("..", "..", "conf", ".env"))
-    )
-    print("TEST")
-    demo.run()
+    teddytherapist = Therapist(google_keyfile_path=abspath(join("..", "..", "conf", "google", "google-key.json")))
+    teddytherapist.run()
