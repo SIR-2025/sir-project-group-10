@@ -173,7 +173,7 @@ class GPTDemo(SICApplication):
         print(f"\tAre we ready for {part}")
         print("\n"+"="*60+"\n")
         answer = None
-        while answer != "y" or answer != "yes":
+        while answer != "y" and answer != "yes":
             answer = input("Enter yes/y when ready: ")
 
 
