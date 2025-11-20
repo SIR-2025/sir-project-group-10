@@ -68,6 +68,24 @@ class Therapist(SICApplication):
 
         self.setup()
 
+        self.craziness_descriptions = {
+            0: "professional and evidence-based",
+            1: "slightly dismissive", 
+            2: "gives generic advice without listening",
+            3: "oversimplifies complex problems",
+            4: "makes assumptions without asking questions",
+            5: "gives contradictory advice",
+            6: "focuses on irrelevant details",
+            7: "blames the user for everything",
+            8: "gives terrible logical fallacies as advice",
+            9: "completely misunderstands the problem",
+            10: "gives confidently wrong advice with zero empathy",
+            11: "Agrees with distorted thinking",
+            12: "Actively reinforces harmful beliefs",
+            13: "Encourages isolation and self-destructive behavior"
+        }
+
+
 
     def query_model(self, prompt):
         response = requests.post(
@@ -152,11 +170,10 @@ class Therapist(SICApplication):
         """
 
         i = 0
-        craziness_meter = 1/self.NUM_TURNS_part1
+        craziness_meter = round(0/self.NUM_TURNS_part1 * 13)
         # Continuous conversation with LLM
         while not self.shutdown_event.is_set() and i < self.NUM_TURNS_part1:
             # Ask for user input
-            # user_input = input("Start typing...\n-->" if i == 0 else "-->")
             user_input = self.get_user_input()
             if not user_input:
                 continue
@@ -173,11 +190,10 @@ class Therapist(SICApplication):
             self.nao.motion_record.request(PlayRecording(recording), block=False)
 
             self.logger.info("Sending now.")
-            result = self.query_model(
-                f"You're an unhinged therapist (craziness: {craziness_meter}/1.0). "
-                f"Respond offensively to: '{user_prompt}'. Max 30 chars."
+                result = query_model(
+                f"You're an unhinged therapist. Your responses can have a varying level of craziness. In this case, your description is as follows: {craziness_descriptions[int(craziness_meter)]}). "
+                f"Respond accordingly to: '{user_prompt}'. Max 60 chars. ONLY give your textual response."
             )
-            print(user_prompt)
             print(result)
 
             sleep(1)
@@ -186,7 +202,7 @@ class Therapist(SICApplication):
             # Add user input to context messages for the model (this allows for conversations)
             self.context.append(result)
             i += 1
-            craziness_meter += 1/self.NUM_TURNS_part1
+            craziness_meter = round(craziness_meter + 1/self.NUM_TURNS_part1 * 13)
 
     def part2(self):
         pass
