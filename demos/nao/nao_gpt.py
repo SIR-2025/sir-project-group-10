@@ -75,9 +75,9 @@ class Therapist(SICApplication):
             json={"prompt": prompt},
             headers={"ngrok-skip-browser-warning": "true"}  # Skip ngrok warning page
         )
-        
+
         print(f"Status: {response.status_code}")
-        
+
         if response.status_code == 200:
             return response.json()['generated_text']
         else:
@@ -135,11 +135,6 @@ class Therapist(SICApplication):
         print(f"User said: {transcript}")
         return transcript
 
-    def estimate_speech_time(self, text):
-        words = len(text.split())
-        # 150 words/minute ≈ 0.4 seconds per word
-        return max(1.0, words * 0.4)
-
     def confirm(self, part):
         """
         Awaits user confirmation for the next part
@@ -194,8 +189,6 @@ class Therapist(SICApplication):
 
             sleep(1)
             self.say_with_gesture(result)
-            speech_time = self.estimate_speech_time(result)
-            # sleep(speech_time)
 
             # Add user input to context messages for the model (this allows for conversations)
             self.context.append(result)
@@ -212,8 +205,8 @@ class Therapist(SICApplication):
         try:
             self.wakeup()
             self.logger.info("I am awoken!")
-            sleep(2)
-            
+            sleep(1)
+
             # Get confirmation that we're ready for part1
             self.confirm("Part 1")
             self.part1()
