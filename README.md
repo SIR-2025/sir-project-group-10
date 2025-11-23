@@ -42,4 +42,4 @@ For Linux as well as Windows, simply run `./teddy.sh` from the same directory it
 
 If all goes well, after a few seconds the main terminal window will output "Listening to user input". At this point, you can talk to the robot and it will respond using the LLM hosted on Colab.
 
-Regarding the Dialogflow CX script, we are still working on incorporating it in a second file similar to teddy.sh. However, as we were still working out our flow for this section, this has not yet been done. In the following weeks, this will be added. 
+Regarding the Dialogflow CX script, we are still working on incorporating it in a second file similar to teddy.sh. However, as we were still working out our flow for this section, this has not yet been done. In the following weeks, this will be added. A summary of the current Dialogflow can found in 'Overview Dialogflow.pdf'.
