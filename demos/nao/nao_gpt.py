@@ -115,7 +115,7 @@ class Therapist(SICApplication):
 
     def clean_incomplete_sentence(self, text):
         """
-        Remove incomplete sentences from the end of the response.
+        Remove incomplete sentences and unwanted characters from the response.
         Returns cleaned text or None if nothing remains.
         """
         if not text or not text.strip():
@@ -123,25 +123,31 @@ class Therapist(SICApplication):
         
         text = text.strip()
         
-        # Check if ends with end punctuation
-        if text[-1] in '.!?':
+        # Remove leading and trailing quotation marks which result in pronunciation errors
+        text = text.strip('"').strip("'").strip('"').strip('"')
+        text = text.strip()
+        
+        # Check if ends with sentence-ending punctuation
+        if text and text[-1] in '.!?':
             return text
         
-        # Find the last ending punctuation
+        # Find the last sentence-ending punctuation
         last_period = text.rfind('.')
         last_exclamation = text.rfind('!')
         last_question = text.rfind('?')
         
         last_sentence_end = max(last_period, last_exclamation, last_question)
         
-        # If found, cut off everything after it
+        # If we found a sentence ending, cut off everything after it
         if last_sentence_end > 0:
             cleaned = text[:last_sentence_end + 1].strip()
+            # Remove any trailing quotes from the cleaned text too
+            cleaned = cleaned.strip('"').strip("'").strip('"').strip('"')
             print(f"Cleaned incomplete sentence. Original length: {len(text)}, Cleaned: {len(cleaned)}")
             return cleaned
         
-        # No complete sentences found at all
-        print("No complete sentences found in response")
+        # No complete sentences found
+        print("No complete sentences found")
         return None
 
 
@@ -164,7 +170,8 @@ class Therapist(SICApplication):
                 if response.status_code == 200:
                     generated_text = response.json()['generated_text']
                     
-                    # Clean incomplete sentences
+                    print("\nRaw generated text:\n")
+                    print(generated_text)
                     cleaned_text = self.clean_incomplete_sentence(generated_text)
                     
                     if cleaned_text and len(cleaned_text) > 10:  # Make sure we have substantial text
