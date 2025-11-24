@@ -35,6 +35,8 @@ from sic_framework.devices.common_naoqi.naoqi_text_to_speech import (
 from time import sleep
 import json
 import requests
+import os
+from datetime import datetime
 from os.path import abspath, join
 
 class Therapist(SICApplication):
@@ -47,7 +49,7 @@ class Therapist(SICApplication):
         super(Therapist, self).__init__()
 
         self.context = []
-        self.NUM_TURNS_part1 = 7
+        self.NUM_TURNS_part1 = 13
         self.chain = ["LArm", "RArm"]
 
         # Nao initialization
@@ -82,25 +84,139 @@ class Therapist(SICApplication):
             10: "gives confidently wrong advice with zero empathy",
             11: "Agrees with distorted thinking",
             12: "Actively reinforces harmful beliefs",
-            13: "Encourages isolation and self-destructive behavior"
+            13: "Encourages isolation and self-destructive behavior",
+            14: "Openly mocks and insults the patient while giving horrible advice"
         }
 
-
-
-    def query_model(self, prompt):
-        response = requests.post(
-            self.API_URL,
-            json={"prompt": prompt},
-            headers={"ngrok-skip-browser-warning": "true"}  # Skip ngrok warning page
-        )
-
-        print(f"Status: {response.status_code}")
-
-        if response.status_code == 200:
-            return response.json()['generated_text']
+    def setup_chat_logging(self):
+        """Create chats directory and determine next chat file number."""
+        # Create chats directory if it doesn't exist
+        if not os.path.exists("chats"):
+            os.makedirs("chats")
+    
+        # Find the next available chat number
+        existing_chats = [f for f in os.listdir("chats") if f.endswith(".txt")]
+        if not existing_chats:
+            self.chat_number = 1
         else:
-            print(f"Response: {response.text}")
+            numbers = [int(f.split(".")[0]) for f in existing_chats if f.split(".")[0].isdigit()]
+            self.chat_number = max(numbers) + 1 if numbers else 1
+        
+        self.chat_file = f"chats/{self.chat_number}.txt"
+        self.logger.info(f"Logging conversation to {self.chat_file}")
+
+    def log_conversation(self, user_input, robot_response, craziness_level):
+        """Log a conversation turn to the chat file."""
+        with open(self.chat_file, "a") as f:
+            f.write(f"Craziness Level: {craziness_level}\n")
+            f.write(f"User: {user_input}\n")
+            f.write(f"Robot: {robot_response}\n")
+            f.write("-" * 60 + "\n\n")
+
+    def clean_incomplete_sentence(self, text):
+        """
+        Remove incomplete sentences from the end of the response.
+        Returns cleaned text or None if nothing remains.
+        """
+        if not text or not text.strip():
             return None
+        
+        text = text.strip()
+        
+        # Check if ends with end punctuation
+        if text[-1] in '.!?':
+            return text
+        
+        # Find the last ending punctuation
+        last_period = text.rfind('.')
+        last_exclamation = text.rfind('!')
+        last_question = text.rfind('?')
+        
+        last_sentence_end = max(last_period, last_exclamation, last_question)
+        
+        # If found, cut off everything after it
+        if last_sentence_end > 0:
+            cleaned = text[:last_sentence_end + 1].strip()
+            print(f"Cleaned incomplete sentence. Original length: {len(text)}, Cleaned: {len(cleaned)}")
+            return cleaned
+        
+        # No complete sentences found at all
+        print("No complete sentences found in response")
+        return None
+
+
+    def query_model(self, prompt, craziness_level, max_retries=3):
+        """Query the model with retry logic for empty responses."""
+        for attempt in range(max_retries):
+            try:
+                response = requests.post(
+                    self.API_URL,
+                    json={
+                        "prompt": prompt,
+                        "craziness": craziness_level
+                    },
+                    headers={"ngrok-skip-browser-warning": "true"},
+                    timeout=30
+                )
+
+                print(f"Status: {response.status_code}")
+
+                if response.status_code == 200:
+                    generated_text = response.json()['generated_text']
+                    
+                    # Clean incomplete sentences
+                    cleaned_text = self.clean_incomplete_sentence(generated_text)
+                    
+                    if cleaned_text and len(cleaned_text) > 10:  # Make sure we have substantial text
+                        return cleaned_text
+                    else:
+                        print(f"Response too short or incomplete on attempt {attempt + 1}, retrying...")
+                        continue
+                else:
+                    print(f"Response: {response.text}")
+                    return None
+                    
+            except Exception as e:
+                print(f"Error on attempt {attempt + 1}: {e}")
+                if attempt < max_retries - 1:
+                    sleep(1)
+                    continue
+                return None
+        
+        print("All retry attempts failed, skipping this turn")
+        return None
+
+
+    def calculate_craziness(self, turn_number, total_turns):
+        """Calculate craziness level with random element."""
+        import random
+        
+        # Define ranges for each phase (1-5)
+        if turn_number == 0:
+            base_range = (0, 2)
+        elif turn_number == 1:
+            base_range = (2, 4)
+        elif turn_number == 2:
+            base_range = (5, 7)
+        elif turn_number == 3:
+            base_range = (8, 10)
+        elif turn_number == 4:
+            base_range = (11, 12)
+        else:  # turn 5+
+            base_range = (13, 14)
+        
+        craziness = random.randint(base_range[0], base_range[1])
+        print(f"Turn {turn_number}: Craziness level {craziness} ({self.craziness_descriptions.get(craziness, 'unknown')})")
+        return craziness
+
+    def build_conversation_context(self, max_turns=5):
+        """Build conversation context from last N turns."""
+        if not self.context:
+            return ""
+        
+        recent_context = self.context[-max_turns:]
+        context_str = "\n".join([f"Previous exchange: {exchange}" for exchange in recent_context])
+        return context_str
 
 
     def setup(self):
@@ -127,6 +243,7 @@ class Therapist(SICApplication):
         self.nao.tts.request(NaoqiTextToSpeechRequest("Animated Say."))
         self.nao.tts.request(NaoqiTextToSpeechRequest("Hello, I am a Nao robot! And I like to chat.", animated=True))
 
+
     def say_with_gesture(self, resp):
         """Make NAO say something while performing a gesture."""
         self.nao.tts.request(NaoqiTextToSpeechRequest(resp, animated=True))
@@ -135,6 +252,7 @@ class Therapist(SICApplication):
     def wakeup(self):
         """Wake up the NAO robot."""
         self.nao.autonomous.request(NaoWakeUpRequest())
+
 
     def rest(self):
         """Put the NAO robot to rest."""
@@ -153,6 +271,7 @@ class Therapist(SICApplication):
         print(f"User said: {transcript}")
         return transcript
 
+
     def confirm(self, part):
         """
         Awaits user confirmation for the next part
@@ -164,48 +283,73 @@ class Therapist(SICApplication):
         while answer != "y" and answer != "yes":
             answer = input("Enter yes/y when ready: ")
 
+
     def part1(self):
         """
         Executes part 1 of the performance
         """
-
         i = 0
-        craziness_meter = round(0/self.NUM_TURNS_part1 * 13)
-        # Continuous conversation with LLM
+        
         while not self.shutdown_event.is_set() and i < self.NUM_TURNS_part1:
+            # Calculate craziness for this turn
+            craziness_meter = self.calculate_craziness(i, self.NUM_TURNS_part1)
+            
             # Ask for user input
             user_input = self.get_user_input()
             if not user_input:
                 continue
 
-            user_prompt = user_input
+            # Build conversation history
+            conversation_history = self.build_conversation_context(max_turns=5)
+            
+            # Construct full prompt with context
+            if conversation_history:
+                full_prompt = f"""
+                You're an unhinged therapist. Your responses can have a varying level of craziness. In this case, your description is as follows: {self.craziness_descriptions[int(craziness_meter)]}.
 
+    Previous conversation:
+    {conversation_history}
+
+    Patient just said: '{user_input}'
+
+    Respond as the therapist. ONLY give your spoken response, no annotations or stage directions."""
+            else:
+                full_prompt = f"""You're an unhinged therapist. Your responses can have a varying level of craziness. In this case, your description is as follows: {self.craziness_descriptions[int(craziness_meter)]}.
+
+    Patient just said: '{user_input}'
+
+    Respond as the therapist. ONLY give your spoken response, no annotations or stage directions.
+    """
 
             # Replay the recording
             self.logger.info("Replaying action")
             self.nao.stiffness.request(
                 Stiffness(stiffness=0.7, joints=self.chain)
-            )  # Enable stiffness for replay
+            )
             recording = NaoqiMotionRecording.load("motion_recorder_test")
             self.nao.motion_record.request(PlayRecording(recording), block=False)
 
-            self.logger.info("Sending now.")
-                result = query_model(
-                f"You're an unhinged therapist. Your responses can have a varying level of craziness. In this case, your description is as follows: {craziness_descriptions[int(craziness_meter)]}). "
-                f"Respond accordingly to: '{user_prompt}'. Max 60 chars. ONLY give your textual response."
-            )
-            print(result)
-
+            # Query model with retry logic
+            self.logger.info(f"Sending request with craziness = {craziness_meter}")
+            result = self.query_model(full_prompt, craziness_meter)
+            
+            if not result:
+                self.logger.warning("Skipping turn due to empty response")
+                continue
+            
+            print(f"Response: {result}")
+            self.log_conversation(user_input, result, craziness_meter)
             sleep(1)
             self.say_with_gesture(result)
 
-            # Add user input to context messages for the model (this allows for conversations)
-            self.context.append(result)
+            # Add exchange to context (store both user and robot parts)
+            self.context.append(f"Patient: {user_input} | Therapist: {result}")
             i += 1
-            craziness_meter = round(craziness_meter + 1/self.NUM_TURNS_part1 * 13)
+
 
     def part2(self):
         pass
+
 
     def run(self):
         """Main application loop."""
@@ -213,6 +357,7 @@ class Therapist(SICApplication):
 
         try:
             self.wakeup()
+            self.setup_chat_logging()
             self.logger.info("I am awoken!")
             sleep(1)
 
