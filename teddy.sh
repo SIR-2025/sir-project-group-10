@@ -22,7 +22,7 @@ fi
 
 # Clear/create log file
 > "$LOG_FILE"
-echo "Output from nao_gpt.py will be written to logs.txt"
+echo "Output from main_script.py will be written to logs.txt"
 echo ""
 
 # Cleanup handler
@@ -34,12 +34,12 @@ cleanup() {
         pkill -TERM redis-server
         pkill -TERM run-google-stt
         pkill -TERM run-gpt
-        pkill -TERM -f "python demos/nao/nao_gpt.py"
+        pkill -TERM -f "python main_script.py"
         sleep 5
         pkill -KILL redis-server 2>/dev/null
         pkill -KILL run-google-stt 2>/dev/null
         pkill -KILL run-gpt 2>/dev/null
-        pkill -KILL -f "python demos/nao/nao_gpt.py" 2>/dev/null
+        pkill -KILL -f "python main_script.py" 2>/dev/null
         pkill -f "gnome-terminal.*Redis Server"
         pkill -f "gnome-terminal.*Google STT"
         pkill -f "gnome-terminal.*Run GPT"
@@ -51,7 +51,7 @@ cleanup() {
     fi
     
     echo "All processes terminated"
-    echo "Check logs.txt for output from nao_gpt.py"
+    echo "Check logs.txt for output from main_script.py"
     exit 0
 }
 
@@ -87,7 +87,7 @@ if [[ "$OS_TYPE" == "Linux" ]]; then
     # Window 4: NAO GPT (bottom-right) with logging
     gnome-terminal --title="NAO GPT" \
         --geometry=120x30+$WIN_WIDTH+$WIN_HEIGHT \
-        -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && python -u demos/nao/nao_gpt.py 2>&1 | tee '$LOG_FILE'" &
+        -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && python -u main_script.py 2>&1 | tee '$LOG_FILE'" &
 
 # --- WINDOWS SECTION (Git Bash version) ---
 else
@@ -105,7 +105,7 @@ else
     sleep 3
     
     # NAO GPT with logging (bottom-right)
-    start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source venv_sic/Scripts/activate; python -u demos/nao/nao_gpt.py 2>&1 | tee '$LOG_FILE'"
+    start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source venv_sic/Scripts/activate; python -u main_script.py 2>&1 | tee '$LOG_FILE'"
 fi
 
 echo "All terminals launched"

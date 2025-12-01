@@ -152,7 +152,7 @@ class Therapist(SICApplication):
             print(f"Cleaned incomplete sentence. Original length: {len(text)}, Cleaned: {len(cleaned)}")
             return cleaned
         
-        # No complete sentences found
+        # No complete sentences found (there are no full sentences at all)
         print("No complete sentences found")
         return None
 
