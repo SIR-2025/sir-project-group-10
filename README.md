@@ -7,14 +7,19 @@ This project aims to show some of the dangers of using robots for therapy. To do
 
 # Execution
 ### Step 1: Environment
-Before being able to run the script, a user will need a sic_venv file as described in the tutorials. Additionally, instructions to run the following demos should be followed as well:
-- `demos/desktop/demo_desktop_dialogflow.py`
-- `demos/desktop/demo_desktop_google_stt.py`
-- `demos/desktop/demo_openai_gpt.py`
-- `demos/nao/demo_nao_dialogflow.py`
-- `demos/nao/demo_nao_dialogflow_cx.py`
-- `demos/nao/demo_nao_motion_recorder.py`
-- `demos/nao/nao_openai.py`
+Before being able to run the script, a user will need a sic_venv file as described in the tutorials. We have given a summary to install all the required functionalities, but this setup structure was only tested on Linux (Debian based).
+`
+sudo apt update
+sudo apt install git redis portaudio19-dev python3-pyaudio
+sudo apt-get install -y libturbojpeg
+python -m venv venv_sic
+source venv_sic/bin/activate
+pip install social-interaction-cloud
+pip install --upgrade social-interaction-cloud==2.1.8 --no-deps
+pip install --upgrade social-interaction-cloud[face-detection,dialogflow,openai-gpt,google-stt,google-tts]
+pip install -U git+https://github.com/lilohuang/PyTurboJPEG.git
+sudo systemctl disable redis-server.service
+`
 
 Many of the files above contain the same installation processes, but to be sure the project works as expected, we recommend ensuring all of the demos mentioned above run as expected.
 NOTE: Some of these demos require personal keys/configurations as well. Naturally, we don't provide our keys in the github, so users should procure their own and set them up according to the demo instructions.
