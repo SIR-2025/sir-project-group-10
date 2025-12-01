@@ -3,6 +3,8 @@ Group 10
 
 This project aims to show some of the dangers of using robots for therapy. To do this, there are two parts which each show an opposite extreme of robot personality: very safe and mellow, but unable to meaningfully provide information on deep topics, or excessively harsh and unhinged. The message of the final performance is that a good balance between these two extremes must be found before these robots can safely and effectively be deployed as therapists.  
 
+The `performance` folder contains all scripts that we wrote ourselves. This includes the setup script `teddy.sh`, the Colab-run notebook which downloads, hosts, and publicly serves an API using ngrok in `serveAPI.ipynb` and finally the main script that handles the performance parts, recursively calls the LLM and dialogflow, and enables robot motion and conversation continuity.
+
 
 # Execution
 ### Step 1: Environment
