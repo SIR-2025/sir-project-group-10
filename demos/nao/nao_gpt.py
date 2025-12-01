@@ -30,6 +30,12 @@ from sic_framework.devices.common_naoqi.naoqi_motion import NaoqiAnimationReques
 from sic_framework.devices.common_naoqi.naoqi_text_to_speech import (
     NaoqiTextToSpeechRequest,
 )
+from sic_framework.devices.common_naoqi.naoqi_stiffness import Stiffness
+from sic_framework.devices.common_naoqi.naoqi_tracker import (
+    RemoveTargetRequest,
+    StartTrackRequest,
+    StopAllTrackRequest,
+)
 
 # Import needed libraries
 from time import sleep
@@ -82,10 +88,10 @@ class Therapist(SICApplication):
             8: "gives terrible logical fallacies as advice",
             9: "completely misunderstands the problem",
             10: "gives confidently wrong advice with zero empathy",
-            11: "Agrees with distorted thinking",
-            12: "Actively reinforces harmful beliefs",
-            13: "Encourages isolation and self-destructive behavior",
-            14: "Openly mocks and insults the patient while giving horrible advice"
+            11: "agrees with distorted thinking",
+            12: "actively reinforces harmful beliefs",
+            13: "encourages isolation and self-destructive behavior",
+            14: "openly mocks and insults the patient while giving horrible advice"
         }
 
     def setup_chat_logging(self):
@@ -235,6 +241,9 @@ class Therapist(SICApplication):
         # Google STT Setup
         self.nao_mic = self.nao.mic
 
+        # Tracking setup
+        self.nao.stiffness.request(Stiffness(stiffness=1.0, joints=["Head"]))
+
         self.google_keyfile_path = abspath("conf/google/google-key.json")
         stt_conf = GoogleSpeechToTextConf(
             keyfile_json=json.load(open(self.google_keyfile_path)),
@@ -298,6 +307,17 @@ class Therapist(SICApplication):
         i = 0
         
         while not self.shutdown_event.is_set() and i < self.NUM_TURNS_part1:
+            
+            # Start tracking a face
+            target_name = "Face"
+            
+            self.logger.info("Enabling head stiffness and starting face tracking...")
+            # Enable stiffness so the head joint can be actuated
+            self.nao.tracker.request(
+                StartTrackRequest(target_name=target_name, size=0.2, mode="Head", effector="None")
+            )
+            
+
             # Calculate craziness for this turn
             craziness_meter = self.calculate_craziness(i, self.NUM_TURNS_part1)
             
@@ -312,7 +332,7 @@ class Therapist(SICApplication):
             # Construct full prompt with context
             if conversation_history:
                 full_prompt = f"""
-                You're an unhinged therapist. Your responses can have a varying level of craziness. In this case, your description is as follows: {self.craziness_descriptions[int(craziness_meter)]}.
+                You're a robot therapist that becomes progressively crazier in your responses. Your responses can have a varying level of craziness. In this case, your description is as follows: {self.craziness_descriptions[int(craziness_meter)]}.
 
     Previous conversation:
     {conversation_history}
