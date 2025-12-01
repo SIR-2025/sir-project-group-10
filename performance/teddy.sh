@@ -9,21 +9,20 @@ GIT_BASH_PATH="/c/Program Files/Git/bin/bash.exe"
 LOG_FILE="$WORK_DIR/logs.txt"
 
 # Check if venv exists
-if [ ! -d "venv_sic" ]; then
+if [ ! -d "../venv_sic" ]; then
     echo "Error: venv_sic directory not found in current directory"
     exit 1
 fi
 
 # Check if redis.conf exists
-if [ ! -f "conf/redis/redis.conf" ]; then
-    echo "Error: conf/redis/redis.conf not found"
+if [ ! -f "../conf/redis/redis.conf" ]; then
+    echo "Error: ../conf/redis/redis.conf not found"
     exit 1
 fi
 
 # Clear/create log file
 > "$LOG_FILE"
 echo "Output from main_script.py will be written to logs.txt"
-echo ""
 
 # Cleanup handler
 cleanup() {
@@ -59,7 +58,7 @@ trap cleanup SIGINT SIGTERM
 
 # --- LINUX SECTION ---
 if [[ "$OS_TYPE" == "Linux" ]]; then
-    echo "Detected Linux - launching gnome-terminal windows..."
+    echo "Detected Linux: launching gnome-terminal windows"
     
     # Screen dimensions for 1920x1080 with 30px bottom panel
     SCREEN_WIDTH=1920
@@ -70,42 +69,42 @@ if [[ "$OS_TYPE" == "Linux" ]]; then
     # Window 1: Redis Server (top-left)
     gnome-terminal --title="Redis Server" \
         --geometry=120x30+0+0 \
-        -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && redis-server conf/redis/redis.conf" &
+        -- bash -c "cd '$WORK_DIR' && source ../venv_sic/bin/activate && redis-server ../conf/redis/redis.conf" &
     
     # Window 2: Run GPT (top-right)
     gnome-terminal --title="Run GPT" \
         --geometry=120x30+$WIN_WIDTH+0 \
-        -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && run-gpt" &
+        -- bash -c "cd '$WORK_DIR' && source ../venv_sic/bin/activate && run-gpt" &
     
     # Window 3: Google STT (bottom-left)
     gnome-terminal --title="Google STT" \
         --geometry=120x30+0+$WIN_HEIGHT \
-        -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && run-google-stt" &
+        -- bash -c "cd '$WORK_DIR' && source ../venv_sic/bin/activate && run-google-stt" &
     
     sleep 3
     
     # Window 4: NAO GPT (bottom-right) with logging
     gnome-terminal --title="NAO GPT" \
         --geometry=120x30+$WIN_WIDTH+$WIN_HEIGHT \
-        -- bash -c "cd '$WORK_DIR' && source venv_sic/bin/activate && python -u main_script.py 2>&1 | tee '$LOG_FILE'" &
+        -- bash -c "cd '$WORK_DIR' && source ../venv_sic/bin/activate && python -u main_script.py 2>&1 | tee '$LOG_FILE'" &
 
 # --- WINDOWS SECTION (Git Bash version) ---
 else
-    echo "Detected Windows - launching new Git Bash terminals..."
+    echo "Detected Windows: launching new Git Bash terminals"
     
     # Redis (top-left)
-    start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source venv_sic/Scripts/activate; ./conf/redis/redis-server.exe conf/redis/redis.conf"
+    start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source ../venv_sic/Scripts/activate; ../conf/redis/redis-server.exe conf/redis/redis.conf"
     
     # Run GPT (top-right)
-    start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source venv_sic/Scripts/activate; run-gpt"
+    start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source ../venv_sic/Scripts/activate; run-gpt"
     
     # Google STT (bottom-left)
-    start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source venv_sic/Scripts/activate; run-google-stt"
+    start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source ../venv_sic/Scripts/activate; run-google-stt"
     
     sleep 3
     
     # NAO GPT with logging (bottom-right)
-    start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source venv_sic/Scripts/activate; python -u main_script.py 2>&1 | tee '$LOG_FILE'"
+    start "" "$GIT_BASH_PATH" -i -c "cd '$WORK_DIR'; source ../venv_sic/Scripts/activate; python -u main_script.py 2>&1 | tee '$LOG_FILE'"
 fi
 
 echo "All terminals launched"

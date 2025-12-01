@@ -410,6 +410,5 @@ class Therapist(SICApplication):
 
 if __name__ == "__main__":
     # This will be the single SICApplication instance for the process
-    google_keyfile_path=abspath(join("..", "..", "conf", "google", "google-key.json"))
-    teddytherapist = Therapist(google_keyfile_path=abspath(join("..", "..", "conf", "google", "google-key.json")))
+    teddytherapist = Therapist(google_keyfile_path=abspath(join("..", "conf", "google", "google-key.json")))
     teddytherapist.run()
