@@ -1,4 +1,3 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/18O6qkbP)
 # SIC-SIR Assignment
 Group 10
 
@@ -36,15 +35,15 @@ The Notebook to host this API endpoint and model is provided in `demos/nao/serve
 ### Step 3: Execution
 Before running the project, ensure that:
 - You are connected via WIFI to the TP-LINK internet.
-- Robot 3 is on, is not currently being used, and still has the correct IP address as denoted in `demos/nao/nao_gpt.py` (currently 10.0.0.137).
+- Robot 3 is on, is not currently being used, and still has the correct IP address as denoted in `main_script.py` (currently 10.0.0.137).
 - The robot is on the ground.
 
 For Linux as well as Windows, simply run `./teddy.sh` from the same directory it is in. For Linux, simply use a terminal to do so, or in Windows, use Git Bash. It will automatically detect your OS type, launch new terminal windows, enter the venv in each of them, and launch the dependencies:
 - Redis
 - `gpt-run`
 - `google-stt-run`
-- `nao_gpt.py` (our main script)
-
+- `main_script.py`
+  
 If all goes well, after a few seconds the main terminal window will output "Listening to user input". At this point, you can talk to the robot and it will respond using the LLM hosted on Colab.
 
 Regarding the Dialogflow CX script, we are still working on incorporating it in a second file similar to teddy.sh. However, as we were still working out our flow for this section, this has not yet been done. In the following weeks, this will be added. A summary of the current Dialogflow can found in 'Overview Dialogflow.pdf'.
