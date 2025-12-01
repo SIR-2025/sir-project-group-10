@@ -35,3 +35,6 @@ conf/google/*.jsonvenv_sic/
 conf/google/*.json
 lib/
 venv_sic/
+logs.txt
+chats/
+sic_applications/
