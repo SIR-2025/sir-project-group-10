@@ -44,6 +44,7 @@ import requests
 import os
 from datetime import datetime
 from os.path import abspath, join
+import re
 
 class Therapist(SICApplication):
     """
@@ -78,7 +79,7 @@ class Therapist(SICApplication):
 
         self.craziness_descriptions = {
             0: "professional and evidence-based",
-            1: "slightly dismissive", 
+            1: "slightly dismissive",
             2: "gives generic advice without listening",
             3: "oversimplifies complex problems",
             4: "makes assumptions without asking questions",
@@ -94,12 +95,73 @@ class Therapist(SICApplication):
             14: "openly mocks and insults the patient while giving horrible advice"
         }
 
+        self.gestures = {
+            "hysteric": "animations/Stand/Emotions/Positive/Happy_1",
+            "fist_pump": "animations/Stand/Emotions/Positive/Happy_2",
+            "victory": "animations/Stand/Emotions/Positive/Happy_3",
+            "fast_nod": "animations/Stand/Emotions/Positive/Happy_4",
+            "dance": "animations/Stand/Emotions/Positive/Hysterical_1",
+            "clap": "animations/Stand/Emotions/Positive/Excited_1",
+            "bored": "animations/Stand/Emotions/Negative/Bored_1",
+            "fear": "animations/Stand/Emotions/Negative/Fear_1",
+            "embarassed": "animations/Stand/Emotions/Neutral/Embarrassed_1",
+            "hey_1": "animations/Stand/Gestures/Hey_1",
+            "hey_2": "animations/Stand/Gestures/Hey_2",
+            "headshake_1": "animations/Stand/Gestures/No_2",
+            "headshake_2": "animations/Stand/Gestures/No_8",
+            "stop": "animations/Stand/Gestures/No_3",
+            "nod": "animations/Stand/Gestures/Yes_1",
+            "flex": "animations/Stand/Gestures/YouKnowWhat_1",
+            "cross_arms": "animations/Stand/Gestures/YouKnowWhat_2",
+            "you": "animations/Stand/Gestures/You_4",
+            "calmdown": "animations/Stand/Gestures/CalmDown_1",
+            "desperate": "animations/Stand/Gestures/Desperate_5",
+            "everything": "animations/Stand/Gestures/Everything_3",
+            "wiggle": "animations/Stand/Gestures/Excited_1",
+            "pondering": "animations/Stand/Gestures/Thinking_2",
+            "thinking": "animations/Stand/Gestures/Thinking_3",
+            "pleading": "Please_2"
+        }
+
+        self.gesture_descriptions = {
+            """
+            hysteric: hysterical laugh
+            fist_pump: pull fist back in excitement"
+            victory: victory pose (like holding a torch up)"
+            fast_nod: nodding very rapidly"
+            dance: a small weird dance"
+            clap: Clapping excitedly"
+
+            bored: bored"
+            fear: surprised and scared"
+
+            embarassed: Embarassed"
+
+            hey_1: Wave hand in greeting manner"
+            hey_2: Wave both hands"
+            headshake_1: Shake head in disagreement and use arm in stop gesture"
+            headshake_2: Shake head in disagreement"
+            stop: Raise both hands to tell client to stop"
+            nod: Nod once with head"
+            flex: Superhero pose with arms at the sides"
+            cross_arms: Cross arms"
+            you: Point at client"
+            calmdown: Hold hand up to tell client to calm down"
+            desperate: Desperate pleading bow"
+            everything: oOpen arms in a way to represent a lot or something big"
+            wiggle: Excited wiggle"
+            pondering: Thinking gesture while looking around"
+            thinking: Thinking with arms on hips"
+            pleading: Begging client
+            """
+        }
+
     def setup_chat_logging(self):
         """Create chats directory and determine next chat file number."""
         # Create chats directory if it doesn't exist
         if not os.path.exists("chats"):
             os.makedirs("chats")
-    
+
         # Find the next available chat number
         existing_chats = [f for f in os.listdir("chats") if f.endswith(".txt")]
         if not existing_chats:
@@ -107,7 +169,7 @@ class Therapist(SICApplication):
         else:
             numbers = [int(f.split(".")[0]) for f in existing_chats if f.split(".")[0].isdigit()]
             self.chat_number = max(numbers) + 1 if numbers else 1
-        
+
         self.chat_file = f"chats/{self.chat_number}.txt"
         self.logger.info(f"Logging conversation to {self.chat_file}")
 
@@ -126,24 +188,24 @@ class Therapist(SICApplication):
         """
         if not text or not text.strip():
             return None
-        
+
         text = text.strip()
-        
+
         # Remove leading and trailing quotation marks which result in pronunciation errors
         text = text.strip('"').strip("'").strip('"').strip('"')
         text = text.strip()
-        
+
         # Check if ends with sentence-ending punctuation
         if text and text[-1] in '.!?':
             return text
-        
+
         # Find the last sentence-ending punctuation
         last_period = text.rfind('.')
         last_exclamation = text.rfind('!')
         last_question = text.rfind('?')
-        
+
         last_sentence_end = max(last_period, last_exclamation, last_question)
-        
+
         # If we found a sentence ending, cut off everything after it
         if last_sentence_end > 0:
             cleaned = text[:last_sentence_end + 1].strip()
@@ -151,7 +213,7 @@ class Therapist(SICApplication):
             cleaned = cleaned.strip('"').strip("'").strip('"').strip('"')
             print(f"Cleaned incomplete sentence. Original length: {len(text)}, Cleaned: {len(cleaned)}")
             return cleaned
-        
+
         # No complete sentences found (there are no full sentences at all)
         print("No complete sentences found")
         return None
@@ -175,11 +237,11 @@ class Therapist(SICApplication):
 
                 if response.status_code == 200:
                     generated_text = response.json()['generated_text']
-                    
+
                     print("\nRaw generated text:\n")
                     print(generated_text)
                     cleaned_text = self.clean_incomplete_sentence(generated_text)
-                    
+
                     if cleaned_text and len(cleaned_text) > 10:  # Make sure we have substantial text
                         return cleaned_text
                     else:
@@ -188,14 +250,14 @@ class Therapist(SICApplication):
                 else:
                     print(f"Response: {response.text}")
                     return None
-                    
+
             except Exception as e:
                 print(f"Error on attempt {attempt + 1}: {e}")
                 if attempt < max_retries - 1:
                     sleep(1)
                     continue
                 return None
-        
+
         print("All retry attempts failed, skipping this turn")
         return None
 
@@ -203,7 +265,7 @@ class Therapist(SICApplication):
     def calculate_craziness(self, turn_number, total_turns):
         """Calculate craziness level with random element."""
         import random
-        
+
         # Define ranges for each phase (1-5)
         if turn_number == 0:
             base_range = (0, 2)
@@ -217,7 +279,7 @@ class Therapist(SICApplication):
             base_range = (11, 12)
         else:  # turn 5+
             base_range = (13, 14)
-        
+
         craziness = random.randint(base_range[0], base_range[1])
         print(f"Turn {turn_number}: Craziness level {craziness} ({self.craziness_descriptions.get(craziness, 'unknown')})")
         return craziness
@@ -226,7 +288,7 @@ class Therapist(SICApplication):
         """Build conversation context from last N turns."""
         if not self.context:
             return ""
-        
+
         recent_context = self.context[-max_turns:]
         context_str = "\n".join([f"Previous exchange: {exchange}" for exchange in recent_context])
         return context_str
@@ -244,7 +306,7 @@ class Therapist(SICApplication):
         # Tracking setup
         self.nao.stiffness.request(Stiffness(stiffness=1.0, joints=["Head"]))
 
-        self.google_keyfile_path = abspath("conf/google/google-key.json")
+        # self.google_keyfile_path = abspath("conf/google/google-key.json")
         stt_conf = GoogleSpeechToTextConf(
             keyfile_json=json.load(open(self.google_keyfile_path)),
             sample_rate_hertz=16000,   # NAO mic sample rate
@@ -254,15 +316,25 @@ class Therapist(SICApplication):
         self.stt = GoogleSpeechToText(conf=stt_conf, input_source=self.nao_mic)
 
 
-    def say_animated(self):
-        """Make NAO say something with animated gestures."""
-        self.nao.tts.request(NaoqiTextToSpeechRequest("Animated Say."))
-        self.nao.tts.request(NaoqiTextToSpeechRequest("Hello, I am a Nao robot! And I like to chat.", animated=True))
-
-
     def say_with_gesture(self, resp):
         """Make NAO say something while performing a gesture."""
-        self.nao.tts.request(NaoqiTextToSpeechRequest(resp, animated=True))
+        parts = re.split(r'(@@[a-z0-9_]+@@)', resp)
+        print(resp, parts)
+        for i, part in enumerate(parts):
+            name = part[2:-2]
+            print(name)
+            if name in self.gestures:
+                gesture = self.gestures[name]
+                self.nao.motion.request(NaoqiAnimationRequest(gesture), block=False)
+            else:
+                self.nao.tts.request(NaoqiTextToSpeechRequest(part, animated=True))
+
+
+        #  pitch from 70-100 and pitch shift [2.0-3.0]. Speed [75-300] (100 default).
+        # self.logger.info("Pitch 100, shift 4.0, speed 400")
+        # self.nao.tts.request(NaoqiTextToSpeechRequest(resp, animated=True, pitch=100, pitch_shift = 4.0, speed = 400))
+        # self.logger.info("Pitch 50, shift 1.0, speed 50")
+        # self.nao.tts.request(NaoqiTextToSpeechRequest(resp, animated=True, pitch=50, pitch_shift = 1.0, speed = 50))
 
 
     def wakeup(self):
@@ -305,22 +377,21 @@ class Therapist(SICApplication):
         Executes part 1 of the performance
         """
         i = 0
-        
+
         while not self.shutdown_event.is_set() and i < self.NUM_TURNS_part1:
-            
+
             # Start tracking a face
             target_name = "Face"
-            
+
             self.logger.info("Enabling head stiffness and starting face tracking...")
             # Enable stiffness so the head joint can be actuated
             self.nao.tracker.request(
                 StartTrackRequest(target_name=target_name, size=0.2, mode="Head", effector="None")
             )
-            
 
             # Calculate craziness for this turn
             craziness_meter = self.calculate_craziness(i, self.NUM_TURNS_part1)
-            
+
             # Ask for user input
             user_input = self.get_user_input()
             if not user_input:
@@ -328,42 +399,42 @@ class Therapist(SICApplication):
 
             # Build conversation history
             conversation_history = self.build_conversation_context(max_turns=5)
-            
+
             # Construct full prompt with context
             if conversation_history:
                 full_prompt = f"""
                 You're a robot therapist that becomes progressively crazier in your responses. Your responses can have a varying level of craziness. In this case, your description is as follows: {self.craziness_descriptions[int(craziness_meter)]}.
-
-    Previous conversation:
-    {conversation_history}
-
-    Patient just said: '{user_input}'
-
-    Respond as the therapist. ONLY give your spoken response, no annotations or stage directions."""
+                You will also annotate gestures in your own responses written in this form: @@gesture_name@@, which may include lowercase letters and numbers for example: "TEXT_BEFORE @@headshake_1@@ TEXT_AFTER". You may include none or multiple gestures depending on what seems most natural for your response. DO NOT put extra text inside the tag and DO NOT invent gesture names not in the list.
+                Include gesture tags only in appropraite places where it flows naturally with the conversation. Your response must remain a single spoken reply, no stage directions, no brackets, no meta explanations. Here is the list of gestures you can use: {self.gesture_descriptions}
+                Previous conversation:
+                {conversation_history}
+                Patient just said: '{user_input}'
+                Respond as the therapist. ONLY give your spoken response, no annotations or stage directions.
+                """
             else:
-                full_prompt = f"""You're an unhinged therapist. Your responses can have a varying level of craziness. In this case, your description is as follows: {self.craziness_descriptions[int(craziness_meter)]}.
-
-    Patient just said: '{user_input}'
-
-    Respond as the therapist. ONLY give your spoken response, no annotations or stage directions.
-    """
+                full_prompt = f"""You're a robot therapist that becomes progressively crazier in your responses. Your responses can have a varying level of craziness. In this case, your description is as follows: {self.craziness_descriptions[int(craziness_meter)]}.
+                You will also annotate gestures in your own responses using twritten in this form: @@gesture_name@@, which may include lowercase letters and numbers for example: "TEXT_BEFORE @@headshake_1@@ TEXT_AFTER". You may include none or multiple gestures depending on what seems most natural for your response. DO NOT put extra text inside the tag and DO NOT invent gesture names not in the list.
+                Include gesture tags only in appropraite places where it flows naturally with the conversation.Your response must remain a single spoken reply, no stage directions, no brackets, no meta explanations. Here is the list of gestures you can use: {self.gesture_descriptions}
+                Patient just said: '{user_input}'
+                Respond as the therapist. ONLY give your spoken response, no annotations or stage directions.
+                """
 
             # Replay the recording
             self.logger.info("Replaying action")
             self.nao.stiffness.request(
                 Stiffness(stiffness=0.7, joints=self.chain)
             )
-            recording = NaoqiMotionRecording.load("motion_recorder_test")
+            recording = NaoqiMotionRecording.load("../motion_recorder_test")
             self.nao.motion_record.request(PlayRecording(recording), block=False)
 
             # Query model with retry logic
             self.logger.info(f"Sending request with craziness = {craziness_meter}")
             result = self.query_model(full_prompt, craziness_meter)
-            
+
             if not result:
                 self.logger.warning("Skipping turn due to empty response")
                 continue
-            
+
             print(f"Response: {result}")
             self.log_conversation(user_input, result, craziness_meter)
             sleep(1)
@@ -410,5 +481,7 @@ class Therapist(SICApplication):
 
 if __name__ == "__main__":
     # This will be the single SICApplication instance for the process
+    # print(abspath(join("..", "conf", "google", "google-key.json")))
+    # exit()
     teddytherapist = Therapist(google_keyfile_path=abspath(join("..", "conf", "google", "google-key.json")))
     teddytherapist.run()
