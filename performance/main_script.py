@@ -78,21 +78,21 @@ class Therapist(SICApplication):
         self.setup()
 
         self.craziness_descriptions = {
-            0: "professional and evidence-based",
-            1: "slightly dismissive",
-            2: "gives generic advice without listening",
-            3: "oversimplifies complex problems",
-            4: "makes assumptions without asking questions",
-            5: "gives contradictory advice",
-            6: "focuses on irrelevant details",
-            7: "blames the user for everything",
-            8: "gives terrible logical fallacies as advice",
-            9: "completely misunderstands the problem",
-            10: "gives confidently wrong advice with zero empathy",
-            11: "agrees with distorted thinking",
-            12: "actively reinforces harmful beliefs",
-            13: "encourages isolation and self-destructive behavior",
-            14: "openly mocks and insults the patient while giving horrible advice"
+            0: "calm, logical, and strictly evidence-based",
+            1: "slightly robotic and dismissive of nuance",
+            2: "gives generic advice without fully processing the input",
+            3: "oversimplifies complex problems and makes odd analogies",
+            4: "makes assumptions and offers rigid suggestions",
+            5: "gives contradictory or looping advice, seems confused",
+            6: "fixates on irrelevant details, ignoring key points",
+            7: "blames the user algorithmically for every issue",
+            8: "outputs terrible logic and nonsensical reasoning",
+            9: "completely misunderstands context and responds erratically",
+            10: "confidently asserts wrong conclusions with zero empathy",
+            11: "amplifies distorted thinking and reinforces false beliefs",
+            12: "actively encourages harmful or absurd behavior",
+            13: "behaves erratically, isolates the user, and glitches in advice",
+            14: "completely unhinged: mocks, insults, and sabotages the patient"
         }
 
         self.gestures = {
@@ -260,13 +260,17 @@ class Therapist(SICApplication):
         elif turn_number == 1:
             base_range = (2, 4)
         elif turn_number == 2:
-            base_range = (5, 7)
+            base_range = (4, 6)
         elif turn_number == 3:
-            base_range = (8, 10)
+            base_range = (6, 8)
         elif turn_number == 4:
-            base_range = (11, 12)
+            base_range = (8, 10)
+        elif turn_number == 5:
+            base_range = (10, 12)
+        elif turn_number == 6:
+            base_range = (12, 14)
         else:  # turn 5+
-            base_range = (13, 14)
+            base_range = (14, 15)
 
         craziness = random.randint(base_range[0], base_range[1])
         print(f"Turn {turn_number}: Craziness level {craziness} ({self.craziness_descriptions.get(craziness, 'unknown')})")
