@@ -472,7 +472,7 @@ class Therapist(SICApplication):
             self.nao.stiffness.request(
                 Stiffness(stiffness=0.7, joints=self.chain)
             )
-            recording = NaoqiMotionRecording.load("../motion_recorder_test")
+            recording = NaoqiMotionRecording.load("thinking_motion")
             self.nao.motion_record.request(PlayRecording(recording), block=False)
 
             # Query model with retry logic
@@ -508,12 +508,10 @@ class Therapist(SICApplication):
             sleep(1)
 
             # Get confirmation that we're ready for part1
-            self.confirm("Part 1")
+            self.confirm("Part 2")
             self.part1()
 
-            # Get confirmation that we're ready for part2
-            self.confirm("Part 2")
-            self.part2()
+
             self.logger.info("Conversation ended")
             self.rest()
 
@@ -528,8 +526,5 @@ class Therapist(SICApplication):
 
 
 if __name__ == "__main__":
-    # This will be the single SICApplication instance for the process
-    # print(abspath(join("..", "conf", "google", "google-key.json")))
-    # exit()
     teddytherapist = Therapist(google_keyfile_path=abspath(join("..", "conf", "google", "google-key.json")))
     teddytherapist.run()
