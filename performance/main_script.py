@@ -287,10 +287,9 @@ class Therapist(SICApplication):
     def build_conversation_context(self, max_turns=5):
         """Build conversation context from last N turns."""
         if not self.context:
-            return ""
+            return "None yet, we are at the start of the conversation"
 
-        recent_context = self.context[-max_turns:]
-        context_str = "\n".join([f"Previous exchange: {exchange}" for exchange in recent_context])
+        context_str = "\n".join(self.context[-max_turns:])
         return context_str
 
 
@@ -319,58 +318,56 @@ class Therapist(SICApplication):
     def say_with_gesture(self, resp):
         """Make NAO say something while performing gestures with customizable voice parameters."""
         # Split by both gesture tags and voice parameter tags
-        parts = re.split(r'(@@[a-z0-9_]+@@|\[VOICE:[^\]]+\])', resp)
-        
-        print(f"Processing response: {resp}")
-        print(f"Split into parts: {parts}")
-        
+
+        # Regex to match either a tag or text
+        pattern = r'(\[.*?\])'  # Matches anything in brackets
+
+        # Split sentence into parts (tags and text)
+        parts = re.split(pattern, resp)
+        print("PARSE START")
+        print(parts)
+
         current_voice_params = {
             'pitch': 85,
             'pitch_shift': 2.0,
             'speed': 100
         }
-        
-        for i, part in enumerate(parts):
+
+        for part in parts:
             part = part.strip()
             if not part:
                 continue
-                
-            # Check if it's a gesture tag
-            if part.startswith('@@') and part.endswith('@@'):
-                gesture_name = part[2:-2]
-                print(f"Executing gesture: {gesture_name}")
-                if gesture_name in self.gestures:
-                    gesture = self.gestures[gesture_name]
+
+            if part.startswith("[VOICE:"):
+                voice_data = part[len("[VOICE:"): -1].strip()  # remove brackets
+                pitch, shift, speed = [float(x.strip()) for x in voice_data.split(',')]
+                print(f"VOICE detected -> pitch: {pitch}, shift: {shift}, speed: {speed}")
+                current_voice_params['pitch'] = pitch
+                current_voice_params['pitch_shift'] = shift
+                current_voice_params['speed'] = speed
+
+            elif part.startswith("[GESTURE:"):
+                gesture_data = part[len("[GESTURE:"): -1].strip()  # remove brackets
+                print("GESTURE detected:", gesture_data)
+                if gesture_data in self.gestures:
+                    print("Execute gesture:", gesture_data)
+                    gesture = self.gestures[gesture_data]
                     self.nao.motion.request(NaoqiAnimationRequest(gesture), block=False)
                 else:
-                    print(f"Warning: Unknown gesture '{gesture_name}'")
-            
-            # Check if it's a voice parameter tag
-            elif part.startswith('[VOICE:') and part.endswith(']'):
-                # Extract parameters from [VOICE: pitch, shift, speed]
-                params_str = part[7:-1].strip()  # Remove '[VOICE:' and ']'
-                try:
-                    params = [float(x.strip()) for x in params_str.split(',')]
-                    if len(params) == 3:
-                        current_voice_params['pitch'] = params[0]
-                        current_voice_params['pitch_shift'] = params[1]
-                        current_voice_params['speed'] = params[2]
-                        print(f"Updated voice params: pitch={params[0]}, shift={params[1]}, speed={params[2]}")
-                    else:
-                        print(f"Warning: Invalid voice parameters format: {part}")
-                except ValueError as e:
-                    print(f"Warning: Could not parse voice parameters: {part}. Error: {e}")
-            
-            # Otherwise it's text to speak
+                    print("gesture does no exist:", gesture_data)
+
             else:
-                print(f"Speaking: '{part}' with pitch={current_voice_params['pitch']}, shift={current_voice_params['pitch_shift']}, speed={current_voice_params['speed']}")
+                # This is normal text
+                print("TEXT detected:", part)
+                print(f"Text detected: '{part}' with pitch={current_voice_params['pitch']}, shift={current_voice_params['pitch_shift']}, speed={current_voice_params['speed']}")
                 self.nao.tts.request(NaoqiTextToSpeechRequest(
-                    part, 
+                    part,
                     animated=True,
                     pitch=current_voice_params['pitch'],
                     pitch_shift=current_voice_params['pitch_shift'],
                     speed=current_voice_params['speed']
                 ))
+
 
     def wakeup(self):
         """Wake up the NAO robot."""
@@ -433,42 +430,61 @@ class Therapist(SICApplication):
                 continue
 
             # Build conversation history
-            conversation_history = self.build_conversation_context(max_turns=5)
+            conversation_history = self.build_conversation_context(max_turns=4)
 
-            prompt_base = f"""You're a robot therapist that becomes progressively crazier in your responses. Your responses can have a varying level of craziness. In this case, your description is as follows: {self.craziness_descriptions[int(craziness_meter)]}.
+            prompt_base = f"""<|im_start|>system
+            You're a funny robot therapist that becomes progressively crazier and more harmful/insulting in your responses. Your responses can have a varying level of craziness from 0 to 14.
+            Based on craziness level {craziness_meter}/14, speak in the following style:
+            craziness level: {craziness_meter}/14, Speaking style:{self.craziness_descriptions[int(craziness_meter)]}
+            Always let this style strongly influence your word choice, tone, and reasoning.
+
+            Here is the exchange history between you (the therapist) and the patient (the user):
+            {conversation_history}
+
+            The therapist and patient's latest input give the most context. Use the context for tone and personality only. Don't repeat what is in the history.
 
             You can annotate your responses with TWO types of tags:
 
-            1. GESTURES: Use @@gesture_name@@ format to indicate physical gestures. Place them where they flow naturally in conversation.
-            Example: "Well @@nod@@ I think you should consider this."
-            
-            2. VOICE PARAMETERS: Use [VOICE: pitch, shift, speed] format to change voice characteristics for the PRECEDING text.
-            - pitch: 70 (low) to 100 (high), middle ~85 is normal
-            - pitch_shift: 2.0 (low) to 3.0 (high), middle ~2.5 is normal  
-            - speed: 75 (slow) to 300 (fast), 100 is normal
-            Example: "Hello there [VOICE: 85, 2.5, 100] but this sounds different! [VOICE: 95, 2.8, 150]"
+            1. GESTURES: Use [GESTURE: gesture_name] format to indicate physical gestures. Place them where they flow naturally in conversation.
+            Example: "Well [GESTURE: pondering] I think you should consider this."
 
-            Rules:
+            2. VOICE PARAMETERS: Use [VOICE: pitch, shift, speed] format to change voice characteristics for the text that follows until a new [VOICE: pitch, shift, speed] is called.
+            - pitch: 70 (low) to 100 (high), middle ~85 is normal
+            - pitch_shift: 2.0 (low) to 3.0 (high), middle ~2.5 is normal
+            - speed: 75 (slow) to 300 (fast), 100 is normal
+            Example: "[VOICE: 85, 2.5, 100]Hello there [VOICE: 95, 2.8, 150] but this sounds different! "
+
+            Example that uses both: "[VOICE: 90, 2.0, 120] Today was such[GESTURE: nod] [VOICE: 85, 2.5, 90] a good day!"
+
+            Here are examples demonstrating correct formatting, gesture usage, voice tags, and stylistic variation across different craziness levels. These examples are NOT part of the conversation.
+
+            Important rules:
             - DO NOT put extra text inside tags
-            - DO NOT invent gesture names not in this list: {list(self.gestures.keys())}
-            - Voice parameters are optional. If not specified, defaults will be used.
-            - You can use gestures and voice parameters together naturally
-            - Your response must be a single spoken reply, no stage directions, no meta explanations
+            - ONLY USE gesture names in this list: {list(self.gestures.keys())} DO NOT invent new gesture names
+            - Voice parameters are optional. If not specified, defaults will be used. If unsure, omit VOICE tag.
+            - You can use gestures and voice tags wherever you want in your response
 
             Available gestures: {self.gesture_descriptions}
+
+            Respond only as the therapist to this input, you can use the history only for context. ONLY give the therapist's spoken response once.
+
+            Important reminders:
+            - Respond only with the therapist's spoken words. The patient input is given by the user.
+            - Use [GESTURE: name] from the allowed list, and [VOICE: pitch, shift, speed] within ranges. DO NOT INVENT ANY GESTURES
+            - Place gestures naturally throughout your reply.
+            - Voice changes can appear multiple times anywhere in the response.
+            - Your response must be a single spoken reply, no stage directions, no meta explanations
+            - Keep your response to 2-4 sentences maximum.
+            - SUPER IMPORTANT: current craziness-level is {craziness_meter}/14, Speaking style:{self.craziness_descriptions[int(craziness_meter)]}
+
+            <|im_end|>
+
+            <|im_start|>patient
+            {user_input}<|im_end|>
+            <|im_start|>therapist
             """
 
-            if conversation_history:
-                full_prompt = f"""{prompt_base}
-            Previous conversation:
-            {conversation_history}
-
-            Patient just said: '{user_input}'
-            Respond as the therapist. ONLY give your spoken response with optional gesture and voice tags."""
-            else:
-                full_prompt = f"""{prompt_base}
-            Patient just said: '{user_input}'
-            Respond as the therapist. ONLY give your spoken response with optional gesture and voice tags."""
+            full_prompt = prompt_base
 
             # Replay the recording
             self.logger.info("Replaying action")
@@ -486,13 +502,13 @@ class Therapist(SICApplication):
                 self.logger.warning("Skipping turn due to empty response")
                 continue
 
-            print(f"Response: {result}")
+            print(f"Response: {result}\n\n")
             self.log_conversation(user_input, result, craziness_meter)
-            sleep(1)
+            # sleep(1)
             self.say_with_gesture(result)
 
             # Add exchange to context (store both user and robot parts)
-            self.context.append(f"Patient: {user_input} | Therapist: {result}")
+            self.context.append(f"""{{"role": "patient", "craziness": {craziness_meter}/14, "text": "{user_input}"}}\n{{"role": "therapist", "craziness": {craziness_meter}/14, "text": "{result}"}}""")
             i += 1
 
 
