@@ -99,14 +99,11 @@ class Therapist(SICApplication):
             "hysteric": "animations/Stand/Emotions/Positive/Happy_1",
             "fist_pump": "animations/Stand/Emotions/Positive/Happy_2",
             "victory": "animations/Stand/Emotions/Positive/Happy_3",
-            "fast_nod": "animations/Stand/Emotions/Positive/Happy_4",
             "dance": "animations/Stand/Emotions/Positive/Hysterical_1",
             "clap": "animations/Stand/Emotions/Positive/Excited_1",
             "bored": "animations/Stand/Emotions/Negative/Bored_1",
             "fear": "animations/Stand/Emotions/Negative/Fear_1",
-            "embarassed": "animations/Stand/Emotions/Neutral/Embarrassed_1",
-            "hey_1": "animations/Stand/Gestures/Hey_1",
-            "hey_2": "animations/Stand/Gestures/Hey_2",
+            "hey": "animations/Stand/Gestures/Hey_1",
             "headshake_1": "animations/Stand/Gestures/No_2",
             "headshake_2": "animations/Stand/Gestures/No_8",
             "stop": "animations/Stand/Gestures/No_3",
@@ -116,43 +113,34 @@ class Therapist(SICApplication):
             "you": "animations/Stand/Gestures/You_4",
             "calmdown": "animations/Stand/Gestures/CalmDown_1",
             "desperate": "animations/Stand/Gestures/Desperate_5",
-            "everything": "animations/Stand/Gestures/Everything_3",
             "wiggle": "animations/Stand/Gestures/Excited_1",
             "pondering": "animations/Stand/Gestures/Thinking_2",
             "thinking": "animations/Stand/Gestures/Thinking_3",
-            "pleading": "Please_2"
+            "pleading": "animations/Stand/Gestures/Please_2"
         }
 
         self.gesture_descriptions = {
             """
-            hysteric: hysterical laugh
-            fist_pump: pull fist back in excitement"
-            victory: victory pose (like holding a torch up)"
-            fast_nod: nodding very rapidly"
-            dance: a small weird dance"
-            clap: Clapping excitedly"
-
-            bored: bored"
-            fear: surprised and scared"
-
-            embarassed: Embarassed"
-
-            hey_1: Wave hand in greeting manner"
-            hey_2: Wave both hands"
-            headshake_1: Shake head in disagreement and use arm in stop gesture"
-            headshake_2: Shake head in disagreement"
-            stop: Raise both hands to tell client to stop"
-            nod: Nod once with head"
-            flex: Superhero pose with arms at the sides"
-            cross_arms: Cross arms"
-            you: Point at client"
-            calmdown: Hold hand up to tell client to calm down"
-            desperate: Desperate pleading bow"
-            everything: oOpen arms in a way to represent a lot or something big"
-            wiggle: Excited wiggle"
-            pondering: Thinking gesture while looking around"
-            thinking: Thinking with arms on hips"
+            fist_pump: Pull fist back in excitement
+            victory: Victory pose
+            dance: A small weird dance
+            clap: Clapping excitedly
+            bored: Acting bored
+            fear: Surprised and scared
+            hey: Wave hand as greeting
+            headshake: Shake head in disagreement
+            stop: Raise both hands to tell client to stop
+            nod: Nod once with head
+            flex: Superhero pose with arms at the sides
+            cross_arms: Cross arms
+            you: Point at client
+            calmdown: Hold hand up to tell client to calm down
+            desperate: Desperate pleading bow
+            wiggle: Excited wiggle
+            pondering: Thinking gesture while looking around
+            thinking: Thinking with arms on hips
             pleading: Begging client
+            hysteric: Hysterical laugh (use for highest craziness levels)
             """
         }
 
