@@ -96,7 +96,6 @@ class Therapist(SICApplication):
         }
 
         self.gestures = {
-            "hysteric": "animations/Stand/Emotions/Positive/Happy_1",
             "fist_pump": "animations/Stand/Emotions/Positive/Happy_2",
             "victory": "animations/Stand/Emotions/Positive/Happy_3",
             "dance": "animations/Stand/Emotions/Positive/Hysterical_1",
@@ -104,8 +103,7 @@ class Therapist(SICApplication):
             "bored": "animations/Stand/Emotions/Negative/Bored_1",
             "fear": "animations/Stand/Emotions/Negative/Fear_1",
             "hey": "animations/Stand/Gestures/Hey_1",
-            "headshake_1": "animations/Stand/Gestures/No_2",
-            "headshake_2": "animations/Stand/Gestures/No_8",
+            "headshake": "animations/Stand/Gestures/No_8",
             "stop": "animations/Stand/Gestures/No_3",
             "nod": "animations/Stand/Gestures/Yes_1",
             "flex": "animations/Stand/Gestures/YouKnowWhat_1",
@@ -116,7 +114,9 @@ class Therapist(SICApplication):
             "wiggle": "animations/Stand/Gestures/Excited_1",
             "pondering": "animations/Stand/Gestures/Thinking_2",
             "thinking": "animations/Stand/Gestures/Thinking_3",
-            "pleading": "animations/Stand/Gestures/Please_2"
+            "pleading": "animations/Stand/Gestures/Please_2",
+            "hysteric": "animations/Stand/Emotions/Positive/Happy_1"
+
         }
 
         self.gesture_descriptions = {
