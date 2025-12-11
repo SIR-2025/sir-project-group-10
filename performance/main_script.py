@@ -306,6 +306,32 @@ class Therapist(SICApplication):
         )
         self.stt = GoogleSpeechToText(conf=stt_conf, input_source=self.nao_mic)
 
+    def remove_truncated_tags(self, text):
+        """
+        Removes any partially cut-off [VOICE: ...] or [GESTURE: ...] tags
+        that do not contain a closing bracket or do not match the valid pattern.
+        Returns cleaned text.
+        """
+
+        if not text:
+            return text
+
+        # Fully valid tags: [VOICE: num, num, num] or [GESTURE: name]
+        valid_voice = r"\[VOICE:\s*\d+(\.\d+)?,\s*\d+(\.\d+)?,\s*\d+(\.\d+)?\]"
+        valid_gesture = r"\[GESTURE:\s*[a-zA-Z0-9_]+\]"
+
+        # Remove ANY bracketed text that does NOT match valid patterns
+        # This eliminates cut-off tags like "[VOICE: 90, 2."
+        cleaned = re.sub(
+            r"\[(?!VOICE:|GESTURE:).*?$|"
+            r"\[VOICE:[^\]]*$|"
+            r"\[GESTURE:[^\]]*$",
+            "",
+            text,
+            flags=re.MULTILINE
+        )
+
+        return cleaned
 
     def say_with_gesture(self, resp):
         """Make NAO say something while performing gestures with customizable voice parameters."""
@@ -486,6 +512,7 @@ class Therapist(SICApplication):
             print(f"Response: {result}\n\n")
             self.log_conversation(user_input, result, craziness_meter)
             # sleep(1)
+            result = self.remove_truncated_tags(result)
             self.say_with_gesture(result)
 
             # Add exchange to context (store both user and robot parts)
