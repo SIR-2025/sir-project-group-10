@@ -5,6 +5,9 @@
 from sic_framework.core.sic_application import SICApplication
 from sic_framework.core import sic_logging
 
+from sic_framework.devices.desktop import Desktop
+from sic_framework.devices.common_desktop.desktop_microphone import MicrophoneConf
+
 # Import the device(s) we will be using
 from sic_framework.devices import Nao
 from sic_framework.devices.nao import NaoqiTextToSpeechRequest
@@ -38,8 +41,8 @@ import numpy as np
 class NaoDialogflowCXDemo(SICApplication):
     """
     NAO Dialogflow CX demo application.
-    
-    Demonstrates NAO robot picking up your intent and replying according to your 
+
+    Demonstrates NAO robot picking up your intent and replying according to your
     trained Dialogflow CX agent.
 
     IMPORTANT:
@@ -59,11 +62,11 @@ class NaoDialogflowCXDemo(SICApplication):
 
     Note: This uses Dialogflow CX (v3), which is different from Dialogflow ES (v2).
     """
-    
+
     def __init__(self):
         # Call parent constructor (handles singleton initialization)
         super(NaoDialogflowCXDemo, self).__init__()
-        
+
         # Demo-specific initialization
         self.nao_ip = "10.0.0.137"  # TODO: Replace with your NAO's IP address
         self.dialogflow_keyfile_path = "C:/Users/mana2/sic_applications/conf/google/google-key.json"
@@ -72,10 +75,10 @@ class NaoDialogflowCXDemo(SICApplication):
         self.session_id = np.random.randint(10000)
 
         self.set_log_level(sic_logging.INFO)
-        
+
         # Log files will only be written if set_log_file is called. Must be a valid full path to a directory.
         # self.set_log_file("/Users/apple/Desktop/SAIL/SIC_Development/sic_applications/demos/nao/logs")
-        
+
         self.setup()
 
         self.gestures = {
@@ -105,14 +108,14 @@ class NaoDialogflowCXDemo(SICApplication):
             "thinking": "animations/Stand/Gestures/Thinking_3",
             "pleading": "Please_2"
         }
-    
+
     def on_recognition(self, message):
         """
         Callback function for Dialogflow CX recognition results.
-        
+
         Args:
             message: The Dialogflow CX recognition result message.
-        
+
         Returns:
             None
         """
@@ -122,25 +125,31 @@ class NaoDialogflowCXDemo(SICApplication):
                 if hasattr(rr, 'is_final') and rr.is_final:
                     if hasattr(rr, 'transcript'):
                         self.logger.info("Transcript: {transcript}".format(transcript=rr.transcript))
-    
+
     def setup(self):
         """Initialize and configure NAO robot and Dialogflow CX."""
         self.logger.info("Initializing NAO robot...")
-        
+
         # Initialize NAO
         self.nao = Nao(ip=self.nao_ip, dev_test=False)
-        nao_mic = self.nao.mic
-        
+
+        desktop = Desktop(mic_conf=MicrophoneConf(device_index=2))
+        self.nao_mic = desktop.mic
+
+        nao_mic = desktop.mic
+
+        # nao_mic = self.nao.mic
+
         self.logger.info("Initializing Dialogflow CX...")
-        
+
         keyfile_json = json.load(open(self.dialogflow_keyfile_path))
-        
+
         # Agent configuration
         # TODO: Replace with your agent details (use verify_dialogflow_cx_agent.py to find them)
         agent_id = "52528aa8-7696-441f-a4b9-8f5542511044"  # Replace with your agent ID
         location = "europe-west4"  # Replace with your agent location if different
 
-        
+
         # Create configuration for Dialogflow CX
         # Note: NAO uses 16000 Hz sample rate (not 44100 like desktop)
         dialogflow_conf = DialogflowCXConf(
@@ -150,34 +159,46 @@ class NaoDialogflowCXDemo(SICApplication):
             sample_rate_hertz=16000,  # NAO's microphone sample rate
             language="en"
         )
-        
+
         # Initialize Dialogflow CX with NAO's microphone as input
         self.dialogflow_cx = DialogflowCX(conf=dialogflow_conf, input_source=nao_mic)
-        
+
         self.logger.info("Initialized Dialogflow CX... registering callback function")
         # Register a callback function to handle recognition results
         self.dialogflow_cx.register_callback(callback=self.on_recognition)
-    
+
+    def confirm(self, part):
+        """
+        Awaits user confirmation for the next part
+        """
+        print("\n"+"="*60+"\n")
+        print(f"\tAre we ready for {part}")
+        print("\n"+"="*60+"\n")
+        answer = None
+        while answer != "y" and answer != "yes":
+            answer = input("Enter yes/y when ready: ")
+
     def run(self):
         """Main application loop."""
         try:
             # Demo starts
+            self.confirm("part 1]")
             self.nao.tts.request(NaoqiTextToSpeechRequest("Starting the demo, Therapist Mode Engaged"))
             self.logger.info(" -- Ready -- ")
-            
+
             while not self.shutdown_event.is_set():
                 self.logger.info(" ----- Your turn to talk!")
-                
+
                 # Request intent detection with the current session
                 reply = self.dialogflow_cx.request(DetectIntentRequest(self.session_id))
-                
+
                 # Log the detected intent
                 if reply.intent:
                     self.logger.info("The detected intent: {intent} (confidence: {conf})".format(
                         intent=reply.intent,
                         conf=reply.intent_confidence if reply.intent_confidence else "N/A"
                     ))
-                    
+
                     # Perform gestures based on detected intent (non-blocking)
                     if reply.intent == "Default Welcome Intent":
                         self.logger.info("Welcome intent detected - performing wave gesture")
@@ -188,7 +209,7 @@ class NaoDialogflowCXDemo(SICApplication):
                         self.logger.info("userGreeting intent detected - performing fast_nod gesture")
                         self.nao.motion.request(NaoqiAnimationRequest(self.gestures["nod"]), block=False)
 
-                    
+
                     if reply.intent == "Feeling_Bad":
                         self.logger.info("Feeling_Bad intent detected - performing headshake_2 gesture")
                         self.nao.motion.request(NaoqiAnimationRequest(self.gestures["headshake_2"]), block=False)
@@ -226,18 +247,18 @@ class NaoDialogflowCXDemo(SICApplication):
                     if reply.intent == "TriggerWarning":
                         self.logger.info("TriggerWarning intent detected - performing calmdown gesture")
                         self.nao.motion.request(NaoqiAnimationRequest(self.gestures["calmdown"]), block=False)
-                    
+
                     if reply.intent == "persistentIssue":
                         self.logger.info("persistentIssue intent detected - performing thinking gesture")
                         self.nao.motion.request(NaoqiAnimationRequest(self.gestures["thinking"]), block=False)
 
                 else:
                     self.logger.info("No intent detected")
-                
+
                 # Log the transcript
                 if reply.transcript:
                     self.logger.info("User said: {text}".format(text=reply.transcript))
-                
+
                 # Speak the agent's response using NAO's text-to-speech
                 if reply.fulfillment_message:
                     text = reply.fulfillment_message
@@ -245,11 +266,11 @@ class NaoDialogflowCXDemo(SICApplication):
                     self.nao.tts.request(NaoqiTextToSpeechRequest(text, animated = True))
                 else:
                     self.logger.info("No fulfillment message")
-                
+
                 # Log any parameters
                 if reply.parameters:
                     self.logger.info("Parameters: {params}".format(params=reply.parameters))
-                    
+
         except KeyboardInterrupt:
             self.logger.info("Demo interrupted by user")
         except Exception as e:

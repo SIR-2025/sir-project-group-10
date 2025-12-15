@@ -2,6 +2,9 @@
 from sic_framework.core.sic_application import SICApplication
 from sic_framework.core import sic_logging
 
+from sic_framework.devices.desktop import Desktop
+from sic_framework.devices.common_desktop.desktop_microphone import MicrophoneConf
+
 # STT imports
 from sic_framework.services.google_stt.google_stt import (
     GoogleSpeechToText,
@@ -116,7 +119,6 @@ class Therapist(SICApplication):
             "thinking": "animations/Stand/Gestures/Thinking_3",
             "pleading": "animations/Stand/Gestures/Please_2",
             "hysteric": "animations/Stand/Emotions/Positive/Happy_1"
-
         }
 
         self.gesture_descriptions = {
@@ -292,7 +294,11 @@ class Therapist(SICApplication):
         self.nao = Nao(ip=self.nao_ip)
 
         # Google STT Setup
-        self.nao_mic = self.nao.mic
+        # self.nao_mic = self.nao.mic
+
+        desktop = Desktop(mic_conf=MicrophoneConf(device_index=2))
+        self.nao_mic = desktop.mic
+
 
         # Tracking setup
         self.nao.stiffness.request(Stiffness(stiffness=1.0, joints=["Head"]))
@@ -427,6 +433,8 @@ class Therapist(SICApplication):
         Executes part 1 of the performance
         """
         i = 0
+
+        self.nao.tts.request(NaoqiTextToSpeechRequest("Therapist mode engaged. Beginning session."))
 
         while not self.shutdown_event.is_set() and i < self.NUM_TURNS_part1:
 
