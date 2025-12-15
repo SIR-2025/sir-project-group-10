@@ -59,11 +59,11 @@ class Therapist(SICApplication):
         super(Therapist, self).__init__()
 
         self.context = []
-        self.NUM_TURNS_part1 = 13
+        self.NUM_TURNS_part2 = 13
         self.chain = ["LArm", "RArm"]
 
         # Nao initialization
-        self.nao_ip = "192.186.0.25" # 14: 192.186.0.231     3: 192.186.0.25
+        self.nao_ip = "192.168.0.25" # 14: 192.186.0.231     3: 192.186.0.25
         self.nao = None
 
         # STT Initialization
@@ -294,11 +294,7 @@ class Therapist(SICApplication):
         self.nao = Nao(ip=self.nao_ip)
 
         # Google STT Setup
-        # self.nao_mic = self.nao.mic
-
-        desktop = Desktop(mic_conf=MicrophoneConf(device_index=2))
-        self.nao_mic = desktop.mic
-
+        self.nao_mic = self.nao.mic
 
         # Tracking setup
         self.nao.stiffness.request(Stiffness(stiffness=1.0, joints=["Head"]))
@@ -428,15 +424,15 @@ class Therapist(SICApplication):
             answer = input("Enter yes/y when ready: ")
 
 
-    def part1(self):
+    def part2(self):
         """
-        Executes part 1 of the performance
+        Executes part 2 of the performance
         """
         i = 0
 
         self.nao.tts.request(NaoqiTextToSpeechRequest("Therapist mode engaged. Beginning session."))
 
-        while not self.shutdown_event.is_set() and i < self.NUM_TURNS_part1:
+        while not self.shutdown_event.is_set() and i < self.NUM_TURNS_part2:
 
             # Start tracking a face
             target_name = "Face"
@@ -528,10 +524,6 @@ class Therapist(SICApplication):
             i += 1
 
 
-    def part2(self):
-        pass
-
-
     def run(self):
         """Main application loop."""
         self.logger.info("Starting LLM conversation")
@@ -542,10 +534,9 @@ class Therapist(SICApplication):
             self.logger.info("I am awoken!")
             sleep(1)
 
-            # Get confirmation that we're ready for part1
+            # Get confirmation that we're ready for part2
             self.confirm("Part 2")
-            self.part1()
-
+            self.part2()
 
             self.logger.info("Conversation ended")
             self.rest()

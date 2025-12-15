@@ -5,9 +5,6 @@
 from sic_framework.core.sic_application import SICApplication
 from sic_framework.core import sic_logging
 
-from sic_framework.devices.desktop import Desktop
-from sic_framework.devices.common_desktop.desktop_microphone import MicrophoneConf
-
 # Import the device(s) we will be using
 from sic_framework.devices import Nao
 from sic_framework.devices.nao import NaoqiTextToSpeechRequest
@@ -68,8 +65,7 @@ class NaoDialogflowCXDemo(SICApplication):
         super(NaoDialogflowCXDemo, self).__init__()
 
         # Demo-specific initialization
-        self.nao_ip = "192.186.0.25"  # TODO: Replace with your NAO's IP address
-        # self.dialogflow_keyfile_path = "C:/Users/mana2/sic_applications/conf/google/google-key.json"
+        self.nao_ip = "10.0.0.137"  # TODO: Replace with your NAO's IP address
         self.dialogflow_keyfile_path = abspath(join("..", "conf", "google", "google-key.json"))
         self.nao = None
         self.dialogflow_cx = None
@@ -133,13 +129,7 @@ class NaoDialogflowCXDemo(SICApplication):
 
         # Initialize NAO
         self.nao = Nao(ip=self.nao_ip, dev_test=False)
-
-        desktop = Desktop(mic_conf=MicrophoneConf(device_index=2))
-        self.nao_mic = desktop.mic
-
-        nao_mic = desktop.mic
-
-        # nao_mic = self.nao.mic
+        nao_mic = self.nao.mic
 
         self.logger.info("Initializing Dialogflow CX...")
 
@@ -168,22 +158,10 @@ class NaoDialogflowCXDemo(SICApplication):
         # Register a callback function to handle recognition results
         self.dialogflow_cx.register_callback(callback=self.on_recognition)
 
-    def confirm(self, part):
-        """
-        Awaits user confirmation for the next part
-        """
-        print("\n"+"="*60+"\n")
-        print(f"\tAre we ready for {part}")
-        print("\n"+"="*60+"\n")
-        answer = None
-        while answer != "y" and answer != "yes":
-            answer = input("Enter yes/y when ready: ")
-
     def run(self):
         """Main application loop."""
         try:
             # Demo starts
-            self.confirm("part 1]")
             self.nao.tts.request(NaoqiTextToSpeechRequest("Starting the demo, Therapist Mode Engaged"))
             self.logger.info(" -- Ready -- ")
 
@@ -211,7 +189,7 @@ class NaoDialogflowCXDemo(SICApplication):
                         self.nao.motion.request(NaoqiAnimationRequest(self.gestures["nod"]), block=False)
 
 
-                    if reply.intent == "Feeling_Bad":
+                    if reply.intent == "feelingBad":
                         self.logger.info("Feeling_Bad intent detected - performing headshake_2 gesture")
                         self.nao.motion.request(NaoqiAnimationRequest(self.gestures["headshake_2"]), block=False)
 
@@ -219,11 +197,11 @@ class NaoDialogflowCXDemo(SICApplication):
                         self.logger.info("canYouHelp intent detected - performing thinking gesture")
                         self.nao.motion.request(NaoqiAnimationRequest(self.gestures["thinking"]), block=False)
 
-                    if reply.intent == "UselessAdvice":
+                    if reply.intent == "uselessAdvice":
                         self.logger.info("UselessAdvice intent detected - performing embarassed gesture")
                         self.nao.motion.request(NaoqiAnimationRequest(self.gestures["embarassed"]), block=False)
 
-                    if reply.intent == "WaterProblemRelevance":
+                    if reply.intent == "waterProblemRelevance":
                         self.logger.info("WaterProblemRelevance intent detected - performing embarassed gesture")
                         self.nao.motion.request(NaoqiAnimationRequest(self.gestures["embarassed"]), block=False)
 
@@ -232,12 +210,12 @@ class NaoDialogflowCXDemo(SICApplication):
                         recording = NaoqiMotionRecording.load("box_Larm")   ##seperate file
                         self.nao.motion_record.request(PlayRecording(recording), block=False)
 
-                    if reply.intent == "One":
+                    if reply.intent == "one":
                         self.logger.info("One intent detected - performing nod gesture")
                         self.nao.motion.request(NaoqiAnimationRequest(self.gestures["nod"]), block=False)
 
 
-                    if reply.intent == "Two":
+                    if reply.intent == "two":
                         self.logger.info("Two intent detected - performing nod gesture")
                         self.nao.motion.request(NaoqiAnimationRequest(self.gestures["nod"]), block=False)
 
@@ -245,7 +223,7 @@ class NaoDialogflowCXDemo(SICApplication):
                         self.logger.info("generalResponse intent detected - performing cross_arms gesture")
                         self.nao.motion.request(NaoqiAnimationRequest(self.gestures["cross_arms"]), block=False)
 
-                    if reply.intent == "TriggerWarning":
+                    if reply.intent == "triggerWarning":
                         self.logger.info("TriggerWarning intent detected - performing calmdown gesture")
                         self.nao.motion.request(NaoqiAnimationRequest(self.gestures["calmdown"]), block=False)
 
