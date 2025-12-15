@@ -68,8 +68,9 @@ class NaoDialogflowCXDemo(SICApplication):
         super(NaoDialogflowCXDemo, self).__init__()
 
         # Demo-specific initialization
-        self.nao_ip = "10.0.0.137"  # TODO: Replace with your NAO's IP address
-        self.dialogflow_keyfile_path = "C:/Users/mana2/sic_applications/conf/google/google-key.json"
+        self.nao_ip = "192.186.0.25"  # TODO: Replace with your NAO's IP address
+        # self.dialogflow_keyfile_path = "C:/Users/mana2/sic_applications/conf/google/google-key.json"
+        self.dialogflow_keyfile_path = abspath(join("..", "conf", "google", "google-key.json"))
         self.nao = None
         self.dialogflow_cx = None
         self.session_id = np.random.randint(10000)

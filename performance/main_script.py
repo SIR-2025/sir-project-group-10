@@ -63,7 +63,7 @@ class Therapist(SICApplication):
         self.chain = ["LArm", "RArm"]
 
         # Nao initialization
-        self.nao_ip = "10.0.0.137"
+        self.nao_ip = "192.186.0.25" # 14: 192.186.0.231     3: 192.186.0.25
         self.nao = None
 
         # STT Initialization
