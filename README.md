@@ -79,7 +79,7 @@ In the main
 If all goes well, after a few seconds the main terminal window will output "Listening to user input". At this point, you can talk to the robot and it will respond using the LLM hosted on Colab.
 
 
-#Execution Safe Robot
+# Execution Safe Robot
 ### Step 1: Environment
 Follow the same steps as described above to enable the environment.
 Ensure a separate terminal is running with the following command: "run-dialogflow-cx"
