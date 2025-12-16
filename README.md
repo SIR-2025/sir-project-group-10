@@ -1,9 +1,28 @@
 # SIC-SIR Assignment
 Group 10
 
-This project aims to show some of the dangers of using robots for therapy. To do this, there are two parts which each show an opposite extreme of robot personality: very safe and mellow, but unable to meaningfully provide information on deep topics, or excessively harsh and unhinged. The message of the final performance is that a good balance between these two extremes must be found before these robots can safely and effectively be deployed as therapists.  
+This project demonstrates the risks of deploying social robots as therapists by contrasting two extreme interaction styles:
 
-The `performance` folder contains all scripts that we wrote ourselves. This includes the setup script `teddy.sh`, the Colab-run notebook which downloads, hosts, and publicly serves an API using ngrok in `serveAPI.ipynb` and finally the main script that handles the performance parts, recursively calls the LLM and dialogflow, and enables robot motion and conversation continuity.
+- **Part 1 – Safe Therapist:**
+  A conservative, rule-based therapist implemented using Dialogflow CX.
+  The robot is polite and safe, but limited in depth and adaptability.
+
+- **Part 2 – Unsafe Therapist:**
+  A progressively unhinged therapist powered by a Large Language Model (LLM).
+  The robot becomes increasingly harmful, insulting, and irrational over time.
+
+The message of the final performance is that a good balance between these two extremes must be found before these robots can safely and effectively be deployed as therapists.
+
+The `performance/` folder contains the core application logic for both parts of the performance:
+- `safe_robot_dialogflow_cx.py`
+  Implements **Part 1 (Safe Therapist)** using Dialogflow CX.
+- `main_script.py`
+  Implements **Part 2 (Unsafe Therapist)** using an external LLM API and Google Speech-to-Text.
+- `OpenAITherapist.ipynb`
+  Hosts a Flask-based API backed by OpenAI (GPT-4o-mini), exposed via ngrok.
+
+`teddy.sh` was a script to automatically run some of our code in the correct environments, but it is deprecated and non-functional at the moment.
+
 
 
 # Execution
@@ -25,13 +44,22 @@ sudo systemctl disable redis-server.service
 Many of the files above contain the same installation processes, but to be sure the project works as expected, we recommend ensuring all of the demos mentioned above run as expected.
 NOTE: Some of these demos require personal keys/configurations as well. Naturally, we don't provide our keys in the github, so users should procure their own and set them up according to the demo instructions.
 
-### Step 2: Launch LLM API from Google Colab.
-For the second part of the performance, this project makes ues of an uncensored LLM (Nidium's `Llama-3.2-3B-Uncensored`). Using the free version of Google Colab, we set up an API that serves users wanting to do inference using this model. 
 
-The Notebook to host this API endpoint and model is provided in `demos/nao/serveAPI.ipynb`. For ease of access, we recommend uploading it to Colab. To host a publicly available API, we used a free Flask Ngrok server. 
-1. Sign up, and find your auth token and the public link the API will be bound to.
-2. Paste the authtoken into the final cell of the notebook, in the empty `ngrok.set_auth_token()` call.
-3. Ensure that the `self.API_URL` from `demos/nao/serveAPI.py is set to the public link (by default it is set to ours).
+### LLM API Setup (Part 2)
+
+Part 2 uses an OpenAI-backed LLM served via a Flask API.
+Using the free version of Google Colab, we set up an API that serves users wanting to do inference using this model.
+
+The API is defined in:
+- `performance/OpenAITherapist.ipynb`
+
+Steps:
+1. Open the notebook in Google Colab or locally.
+2. Insert your **OpenAI API key**.
+3. Insert your **ngrok auth token**.
+4. Run the cell
+5. Copy the generated public ngrok URL.
+6. Paste this URL into `self.API_URL` in `performance/main_script.py`.
 
 
 ### Step 3: Execution
@@ -40,12 +68,13 @@ Before running the project, ensure that:
 - Robot 3 is on, is not currently being used, and still has the correct IP address as denoted in `main_script.py` (currently 10.0.0.137).
 - The robot is on the ground.
 
-For Linux as well as Windows, simply run `./teddy.sh` from the same directory it is in. For Linux, simply use a terminal to do so, or in Windows, use Git Bash. It will automatically detect your OS type, launch new terminal windows, enter the venv in each of them, and launch the dependencies:
-- Redis
-- `gpt-run`
+In the main
+- `redis-server conf/redis/redis.conf`
+- `run-dialogflow-cx`
 - `google-stt-run`
-- `main_script.py`
-  
+- `cd performance`
+- `python safe_robot_dialogflow_cx.py`
+- `python main_script.py`
+
 If all goes well, after a few seconds the main terminal window will output "Listening to user input". At this point, you can talk to the robot and it will respond using the LLM hosted on Colab.
 
-Regarding the Dialogflow CX script, we are still working on incorporating it in a second file similar to teddy.sh. However, as we were still working out our flow for this section, this has not yet been done. In the following weeks, this will be added. A summary of the current Dialogflow can found in 'Overview Dialogflow.pdf'.
