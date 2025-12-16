@@ -78,3 +78,20 @@ In the main
 
 If all goes well, after a few seconds the main terminal window will output "Listening to user input". At this point, you can talk to the robot and it will respond using the LLM hosted on Colab.
 
+
+#Execution Safe Robot
+### Step 1: Environment
+Follow the same steps as described above to enable the environment.
+Ensure a separate terminal is running with the following command: "run-dialogflow-cx"
+
+### Step 2: Excecution
+Before running the project, ensure that:
+- You are connected via WIFI to the TP-LINK internet.
+- Robot 3 is on, is not currently being used, and still has the correct IP address as denoted in `safe_robot_dialogflow_cx.py.py` (currently 10.0.0.137).
+- The robot is on the ground.
+- 'box_Larm' is in the same directory as "safe_robot_dialogflow_cx.py"
+  
+For Linux as well as Windows, simply run `safe_robot_dialogflow_cx.py` from the same directory it is in.
+A summary of the current Dialogflow can found in 'Overview Dialogflow.pdf'.
+
+
